@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-06-17 18:17:16
+* @Last Modified time: 2018-06-17 18:38:55
 */
 
 package cmd
@@ -75,9 +75,51 @@ func (gui *Cli_Gui) screen_init() (err error){
 	return
 }
 
-func (gui *Cli_Gui) layout(g *gocui.Gui) (err error) {
+func (gui *Cli_Gui) quit(g *gocui.Gui, v *gocui.View) error {
+	gui.reader_active = false
+	return gocui.ErrQuit
+}
+
+func (gui *Cli_Gui) layout(g *gocui.Gui) error{
+	gui.send_view_layout(g)
+	gui.monitor_view_layout(g)
+	gui.connection_info_layout(g)
+	
+	return nil
+}
+
+func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
 	maxX, maxY := g.Size()
 	if v, err := g.SetView(gui.Connection_Info, 0, 0, maxX/5, maxY-1); err != nil {
+		if err != gocui.ErrUnknownView {
+			fmt.Println(err)
+			return err
+		}
+		v.Title = "Connection Info"
+	}
+
+	return nil
+}
+
+func (gui *Cli_Gui) send_view_layout(g *gocui.Gui) (err error){
+	maxX, maxY := g.Size()
+
+	if v, err := g.SetView(gui.Send_View, maxX/5 + 1, maxY - maxY/10, maxX - 1, maxY-1); err != nil {
+		if err != gocui.ErrUnknownView {
+			fmt.Println(err)
+			return err
+		}
+		v.Title = "Send"
+	}
+
+	return nil
+
+}
+
+func (gui *Cli_Gui) monitor_view_layout(g *gocui.Gui) (err error){
+	maxX, maxY := g.Size()
+
+	if v, err := g.SetView(gui.Monitor_View, maxX/5 + 1, 0, maxX - 1, (maxY - maxY/10) - 1); err != nil {
 		if err != gocui.ErrUnknownView {
 			fmt.Println(err)
 			return err
@@ -92,11 +134,6 @@ func (gui *Cli_Gui) layout(g *gocui.Gui) (err error) {
 	return nil
 }
 
-func (gui *Cli_Gui) quit(g *gocui.Gui, v *gocui.View) error {
-	gui.reader_active = false
-	return gocui.ErrQuit
-}
-
 func (gui *Cli_Gui) Reader_fmt() {
 	
 	counter := 0
@@ -104,7 +141,7 @@ func (gui *Cli_Gui) Reader_fmt() {
 		time.Sleep(500 * time.Millisecond)
 		counter += 1
 		gui.RootGUI.Update(func(g *gocui.Gui) error {
-			v, err := g.View(gui.Connection_Info)
+			v, err := g.View(gui.Monitor_View)
 			if err != nil {
 				log.Println(err)
 				return err
