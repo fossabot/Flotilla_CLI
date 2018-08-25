@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 11:14:45
+* @Last Modified time: 2018-08-25 11:19:14
 */
 
 package mango_interface
@@ -17,6 +17,7 @@ import (
 
 type Mango struct {
 	Conn *dbus.Conn
+	Comm_Obj dbus.BusObject
 
 }
 
@@ -28,6 +29,8 @@ func NewMango() (*Mango, error){
 		fmt.Fprintln(os.Stderr, "Failed to connect to session bus:", err)
 		return nil, err
 	}
+
+	mgo.Comm_Obj = mgo.Conn.Object("com.mango_core.commango", "/com/mango_core/commango")
 
 	return mgo, nil
 }
@@ -61,8 +64,7 @@ func (mgo *Mango) Comm_Disconnect() {
 //Call(method string, flags Flags, args ...interface{}) *Call
 func (mgo *Mango) Comm_Get_Available_Ports() ([]string, error){
 
-	obj := mgo.Conn.Object("com.mango_core.commango", "/com/mango_core/commango")
-	call := obj.Call("com.mango_core.commango.Get_Available_Ports", 0)
+	call := mgo.Comm_Obj.Call("com.mango_core.commango.Get_Available_Ports", 0)
 	fmt.Println(call.Body[0])
 
 	if call.Err != nil{
