@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 15:34:56
+* @Last Modified time: 2018-08-25 16:29:44
 */
 
 package user_interface
@@ -47,16 +47,23 @@ func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
 	if _, err := g.SetCurrentView(name); err != nil {
 		return nil, err
 	}
-	return g.SetViewOnTop(name)
+	view, err := g.SetViewOnTop(name)
+	if err != nil{
+		view.SetCursor(view.Origin())
+	}
+
+	return view, err
 }
 
 
-func (gui *Cli_Gui) nextView(g *gocui.Gui, v *gocui.View) error{
-	var err error
+func (gui *Cli_Gui) nextView(g *gocui.Gui, v *gocui.View) (err error){
+	
 	if v.Name() == gui.Connection_Info{
-		v, err = setCurrentViewOnTop(g, gui.Send_View)
+		_, err = setCurrentViewOnTop(g, gui.Send_View)
+		g.Cursor = true
 	} else {
-		v, err = setCurrentViewOnTop(g, gui.Connection_Info)
+		_, err = setCurrentViewOnTop(g, gui.Connection_Info)
+		g.Cursor = false
 	}
 
 	return err
@@ -70,14 +77,16 @@ func (gui *Cli_Gui) Screen_Init() (err error){
 	defer gui.RootGUI.Close()
 
 	gui.RootGUI.Cursor = true
+	gui.RootGUI.Highlight = true
+	gui.RootGUI.SelFgColor = gocui.ColorGreen
 
 	gui.RootGUI.SetManagerFunc(gui.layout)
 
-	err = gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit)
-	err = gui.RootGUI.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView)
+	if err := gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
+		log.Panicln(err)
+	}
 
-
-	if err != nil {
+	if err := gui.RootGUI.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView); err != nil {
 		log.Panicln(err)
 	}
 
@@ -98,8 +107,6 @@ func (gui *Cli_Gui) layout(g *gocui.Gui) error{
 	gui.send_view_layout(g)
 	gui.monitor_view_layout(g)
 	gui.connection_info_layout(g)
-
-	setCurrentViewOnTop(g, gui.Send_View)
 	
 	return nil
 }
@@ -127,6 +134,9 @@ func (gui *Cli_Gui) send_view_layout(g *gocui.Gui) (err error){
 		}
 		v.Title = "Send"
 		v.Editable = true
+		if _, err = setCurrentViewOnTop(g, gui.Send_View); err != nil {
+			return err
+		}
 	}
 	gui.RootGUI.SetKeybinding(gui.Send_View, gocui.KeyEnter, gocui.ModNone, gui.send_view_clear)
 	return nil
