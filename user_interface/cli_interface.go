@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 10:09:28
+* @Last Modified time: 2018-08-25 15:34:56
 */
 
 package user_interface
@@ -10,9 +10,10 @@ package user_interface
 import(
 	"fmt"
 	"log"
-	"time"
+	_"time"
 	"os"
 	"github.com/jroimartin/gocui"
+	"github.com/ximidar/mango_cli/mango_interface"
 )
 
 type Cli_Gui struct{
@@ -22,6 +23,7 @@ type Cli_Gui struct{
 	Connection_Info string
 	Monitor_View string
 	Send_View string
+	Mango *mango_interface.Mango
 }
 
 func New_Cli_Gui() *Cli_Gui {
@@ -33,7 +35,31 @@ func New_Cli_Gui() *Cli_Gui {
 	cgui.Connection_Info = "connection_info"
 	cgui.Monitor_View = "monitor_view"
 	cgui.Send_View = "send_view"
+	var err error
+	cgui.Mango, err = mango_interface.NewMango()
+	if err != nil{
+		panic(err)
+	}
 	return cgui
+}
+
+func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
+	if _, err := g.SetCurrentView(name); err != nil {
+		return nil, err
+	}
+	return g.SetViewOnTop(name)
+}
+
+
+func (gui *Cli_Gui) nextView(g *gocui.Gui, v *gocui.View) error{
+	var err error
+	if v.Name() == gui.Connection_Info{
+		v, err = setCurrentViewOnTop(g, gui.Send_View)
+	} else {
+		v, err = setCurrentViewOnTop(g, gui.Connection_Info)
+	}
+
+	return err
 }
 
 func (gui *Cli_Gui) Screen_Init() (err error){
@@ -47,7 +73,11 @@ func (gui *Cli_Gui) Screen_Init() (err error){
 
 	gui.RootGUI.SetManagerFunc(gui.layout)
 
-	if err := gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
+	err = gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit)
+	err = gui.RootGUI.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView)
+
+
+	if err != nil {
 		log.Panicln(err)
 	}
 
@@ -68,6 +98,8 @@ func (gui *Cli_Gui) layout(g *gocui.Gui) error{
 	gui.send_view_layout(g)
 	gui.monitor_view_layout(g)
 	gui.connection_info_layout(g)
+
+	setCurrentViewOnTop(g, gui.Send_View)
 	
 	return nil
 }
@@ -94,10 +126,20 @@ func (gui *Cli_Gui) send_view_layout(g *gocui.Gui) (err error){
 			return err
 		}
 		v.Title = "Send"
+		v.Editable = true
 	}
-
+	gui.RootGUI.SetKeybinding(gui.Send_View, gocui.KeyEnter, gocui.ModNone, gui.send_view_clear)
 	return nil
 
+}
+
+func (gui *Cli_Gui) send_view_clear(g *gocui.Gui, v *gocui.View) error {
+	contents := v.Buffer()
+	gui.Mango.Comm_Write(contents)
+	v.Clear()
+	v.SetCursor(v.Origin())
+
+	return nil
 }
 
 func (gui *Cli_Gui) monitor_view_layout(g *gocui.Gui) (err error){
@@ -120,21 +162,31 @@ func (gui *Cli_Gui) monitor_view_layout(g *gocui.Gui) (err error){
 
 func (gui *Cli_Gui) Reader_fmt() {
 	
-	counter := 0
+	reader, err := gui.Mango.Get_Comm_Signal()
+	if err != nil{
+		panic(err)
+	}
 	for gui.reader_active{
-		time.Sleep(10 * time.Millisecond)
-		counter += 1
-		gui.RootGUI.Update(func(g *gocui.Gui) error {
-			v, err := g.View(gui.Monitor_View)
-			if err != nil {
-				log.Println(err)
+		select{
+		case read := <- reader:
+			gui.RootGUI.Update(func(g *gocui.Gui) error {
+				v, err := g.View(gui.Monitor_View)
+				if err != nil {
+					log.Println(err)
+					return err
+				}
+				
+				mess, ok := read.Body[0].(string)
+				if ok{
+					fmt.Fprintln(v, mess)
+				}
 				return err
-			}
-			
-			mess := fmt.Sprintf("Hello at count: %v", counter)
-			fmt.Fprintln(v, mess)
-			return err
-		})
+			})
+		default:
+			continue
+
+		}
+		
 			
 	}
 }
