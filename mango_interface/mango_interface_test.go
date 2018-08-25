@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:51:03
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 11:27:32
+* @Last Modified time: 2018-08-25 11:55:47
 */
 package mango_interface_test
 
@@ -10,6 +10,7 @@ import (
 	"testing"
 	"fmt"
 	"github.com/ximidar/mango_cli/mango_interface"
+	"time"
 )
 
 func Test_Get_Available_Ports(t *testing.T){
@@ -28,7 +29,7 @@ func Test_Get_Available_Ports(t *testing.T){
 	fmt.Println(ports)
 }
 
-func Test_Comm_Set_Connection_Options(t *testing.T){
+func Test_Comm_set_up_and_write(t *testing.T){
 	mgo, err := mango_interface.NewMango()
 
 	if err != nil{
@@ -36,4 +37,37 @@ func Test_Comm_Set_Connection_Options(t *testing.T){
 	}
 
 	mgo.Comm_Set_Connection_Options("/dev/ttyACM0", 115200)
+	mgo.Comm_Connect()
+
+	duration := time.Duration(5 * time.Second)
+	time.Sleep(duration)
+
+	read_chan, err := mgo.Get_Comm_Signal()
+	stop_reading := false
+
+	read_func := func(){
+		for read := range read_chan{
+			if stop_reading{
+				break
+			}
+
+			fmt.Printf("%s", read.Body[0])
+		}
+	}
+
+	go read_func()
+
+	pause_dur := time.Duration(100 * time.Millisecond)
+	writes := []string{"Hello!", "My", "Name", "Is", "Matt"}
+
+	for _, write := range writes{
+		mgo.Comm_Write(write)
+		time.Sleep(pause_dur)
+	}
+
+	
+
+	stop_reading = true
+
+	mgo.Comm_Disconnect()
 }

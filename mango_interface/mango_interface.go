@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 11:28:00
+* @Last Modified time: 2018-08-25 11:44:33
 */
 
 package mango_interface
@@ -44,11 +44,6 @@ func (mgo *Mango) Get_Comm_Signal() (chan *dbus.Signal, error){
 	return c, nil
 }
 
-func (mgo *Mango) Get_Comm_Service() (error){
-	return nil
-
-}
-
 func (mgo *Mango) Comm_Set_Connection_Options(port string, baud int32) (error){
 	call := mgo.Comm_Obj.Call("com.mango_core.commango.Init_Comm", 0, port, baud)
 
@@ -59,11 +54,22 @@ func (mgo *Mango) Comm_Set_Connection_Options(port string, baud int32) (error){
 
 }
 
-func (mgo *Mango) Comm_Connect() {
+func (mgo *Mango) Comm_Connect() error{
+	call := mgo.Comm_Obj.Call("com.mango_core.commango.Open_Comm", 0)
 
+	if call.Err != nil{
+		return call.Err
+	}
+	return nil
 }
 
-func (mgo *Mango) Comm_Disconnect() {
+func (mgo *Mango) Comm_Disconnect() error{
+	call := mgo.Comm_Obj.Call("com.mango_core.commango.Close_Comm", 0)
+
+	if call.Err != nil{
+		return call.Err
+	}
+	return nil
 
 }
 
@@ -90,6 +96,29 @@ func (mgo *Mango) Comm_Get_Available_Ports() ([]string, error){
 
 }
 
-func (mgo *Mango) Comm_Write(command string) {
+func (mgo *Mango) Comm_Write(command string) (error) {
+	expected_bytes := len(command)
+	call := mgo.Comm_Obj.Call("com.mango_core.commango.Write_Comm", 0, command)
 
+	if call.Err != nil{
+		return call.Err
+	}
+
+	if len(call.Body) > 0 {
+		bytes_written, ok := call.Body[0].(int)
+
+		if !ok {
+			return errors.New("Could not cast body to int")
+		}
+
+		if bytes_written != expected_bytes {
+			return errors.New("expected_bytes != written bytes")
+		}
+
+
+	} else {
+		return errors.New("Call did not return any bytes")			
+	}
+
+	return nil
 }
