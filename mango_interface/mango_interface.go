@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 11:19:14
+* @Last Modified time: 2018-08-25 11:28:00
 */
 
 package mango_interface
@@ -49,7 +49,13 @@ func (mgo *Mango) Get_Comm_Service() (error){
 
 }
 
-func (mgo *Mango) Comm_Set_Connection_Options() {
+func (mgo *Mango) Comm_Set_Connection_Options(port string, baud int32) (error){
+	call := mgo.Comm_Obj.Call("com.mango_core.commango.Init_Comm", 0, port, baud)
+
+	if call.Err != nil{
+		return call.Err
+	}
+	return nil
 
 }
 
