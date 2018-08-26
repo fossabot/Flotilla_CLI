@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 22:00:52
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 13:54:37
+* @Last Modified time: 2018-08-26 15:37:18
  */
 package user_interface
 
@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/jroimartin/gocui"
 	"os"
+	"strings"
 )
 
 type Monitor_Interface interface {
@@ -53,12 +54,22 @@ func (w *Monitor) Write(g *gocui.Gui, mess string) {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(v, mess)
+		fmt.Fprintln(v, String_Cleaner(mess))
 		return err
 
 	})
 
 }
+
+// string cleaner will chop off the trailing \n
+func String_Cleaner(mess string) string{
+	if strings.HasSuffix(mess, "\n"){
+		return mess[:len(mess)-1]
+	} else {
+		return mess
+	}
+}
+
 
 func (w *Monitor) Clear(g *gocui.Gui) {
 	v, err := g.View(w.name)

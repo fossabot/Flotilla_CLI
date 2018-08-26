@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 21:58:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 14:34:49
+* @Last Modified time: 2018-08-26 15:16:58
  */
 package user_interface
 
@@ -156,6 +156,7 @@ func (w *Explode) Layout(g *gocui.Gui) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
+		g.InputEsc=true
 		if err := g.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, w.destroy); err != nil {
 			return err
 		}

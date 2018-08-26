@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 14:23:52
+* @Last Modified time: 2018-08-26 15:18:26
  */
 
 package user_interface
@@ -12,6 +12,8 @@ import (
 	"github.com/jroimartin/gocui"
 	"github.com/ximidar/mango_cli/mango_interface"
 	"log"
+	"strconv"
+	"time"
 )
 
 type Cli_Gui struct {
@@ -25,10 +27,11 @@ type Cli_Gui struct {
 	Baud_Button     string
 	Port_Button     string
 	Connect_Button  string
+	Disconnect_Button string
 	Info_View       string
 
 	port string
-	baud string
+	baud int32
 
 	Mango *mango_interface.Mango
 }
@@ -44,7 +47,12 @@ func New_Cli_Gui() *Cli_Gui {
 	gui.Baud_Button = "baud_button"
 	gui.Port_Button = "port_button"
 	gui.Connect_Button = "connect_button"
+	gui.Disconnect_Button = "disconnect_button"
 	gui.Info_View = "info_view"
+
+	gui.port = ""
+	gui.baud = -1
+
 	var err error
 	gui.Mango, err = mango_interface.NewMango()
 	if err != nil {
@@ -100,11 +108,12 @@ func (gui *Cli_Gui) Screen_Init() (err error) {
 		log.Panicln(err)
 	}
 
+	gui.reader_active = true
+	go gui.Comm_Relay()
+
 	if err := gui.RootGUI.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
-
-	fmt.Println("Exiting!")
 	return
 }
 
@@ -118,19 +127,22 @@ func (gui *Cli_Gui) Layout(g *gocui.Gui) error {
 	gui.Monitor = New_Monitor(gui.Monitor_View, 31, 0)
 	send_bar := New_Send_Bar(gui.Send_View, 31, maxY-3, gui.write_to_comm)
 	gui.connection_info_layout(g)
-	port_button := New_Explode_Button(gui.Port_Button, 0, 8, 14, "Port Select", gui.Info_Loader, gui.Selection_Callback)
+	port_button := New_Explode_Button(gui.Port_Button, 0, 8, 14, "Port Select", gui.get_ports, gui.port_select)
 	baud_button := New_Explode_Button(gui.Baud_Button, 15, 8, 15, "Baud Select", gui.get_bauds, gui.baud_select)
 	connect_button := New_Button(gui.Connect_Button, 0, 11, 30, "Connect", gui.connect_comm)
+	disconnect_button := New_Button(gui.Disconnect_Button, 0, 14, 30, "Disconnect", gui.disconnect_comm)
 	g.Update(gui.Monitor.Layout)
 	g.Update(send_bar.Layout)
 	g.Update(port_button.Layout)
 	g.Update(baud_button.Layout)
 	g.Update(connect_button.Layout)
+	g.Update(disconnect_button.Layout)
 	return nil
 }
 
 func (gui *Cli_Gui) write_to_comm(mess string) {
-	gui.Monitor.Write(gui.RootGUI, mess)
+	//gui.Monitor.Write(gui.RootGUI, mess)
+	gui.Mango.Comm_Write(mess)
 }
 
 func (gui *Cli_Gui) get_bauds() []string{
@@ -139,19 +151,45 @@ func (gui *Cli_Gui) get_bauds() []string{
 
 func (gui *Cli_Gui) baud_select(selection string) {
 	gui.Monitor.Write(gui.RootGUI, fmt.Sprintf("Selection %v ", selection))
+	if temp_baud, err := strconv.Atoi(selection); err == nil {
+		gui.baud = int32(temp_baud)
+	} else {
+		gui.Monitor.Write(gui.RootGUI, "default to 115200")
+		gui.baud = 115200
+	}
 }
 
 func (gui *Cli_Gui) connect_comm(g *gocui.Gui, v *gocui.View) error{
 	gui.Monitor.Write(g, "connect!")
+	gui.Mango.Comm_Set_Connection_Options(gui.port, gui.baud)
+	gui.Mango.Comm_Connect()
 	return nil
 }
 
-func (gui *Cli_Gui) Info_Loader() []string {
-	return []string{"Hello", "My", "name", "is", "Matt"}
+func (gui *Cli_Gui) disconnect_comm(g *gocui.Gui, v *gocui.View) error{
+	gui.Monitor.Write(g, "disconnect!")
+	gui.Mango.Comm_Disconnect()
+	return nil
 }
 
-func (gui *Cli_Gui) Selection_Callback(selection string) {
+
+func (gui *Cli_Gui) get_ports() []string {
+	ports, err := gui.Mango.Comm_Get_Available_Ports()
+
+	if err != nil {
+		return []string{"Check commango daemon"}
+	}
+	
+	if len(ports) == 0{
+		return []string{"no ports available"}
+	}
+
+	return ports
+}
+
+func (gui *Cli_Gui) port_select(selection string) {
 	gui.Monitor.Write(gui.RootGUI, fmt.Sprintf("Selection %v ", selection))
+	gui.port = selection
 }
 
 func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
@@ -167,7 +205,7 @@ func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
 	return nil
 }
 
-func (gui *Cli_Gui) Reader_fmt() {
+func (gui *Cli_Gui) Comm_Relay() {
 
 	reader, err := gui.Mango.Get_Comm_Signal()
 	if err != nil {
@@ -184,6 +222,8 @@ func (gui *Cli_Gui) Reader_fmt() {
 			continue
 
 		}
+		busy_sleeper := time.Duration(50 * time.Millisecond)
+		time.Sleep(busy_sleeper)
 
 	}
 }

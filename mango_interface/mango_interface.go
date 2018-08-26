@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 11:44:33
+* @Last Modified time: 2018-08-26 14:51:01
  */
 
 package mango_interface
@@ -75,7 +75,6 @@ func (mgo *Mango) Comm_Disconnect() error {
 func (mgo *Mango) Comm_Get_Available_Ports() ([]string, error) {
 
 	call := mgo.Comm_Obj.Call("com.mango_core.commango.Get_Available_Ports", 0)
-	fmt.Println(call.Body[0])
 
 	if call.Err != nil {
 		return nil, call.Err
@@ -89,7 +88,7 @@ func (mgo *Mango) Comm_Get_Available_Ports() ([]string, error) {
 		return ports, nil
 	}
 
-	return []string{""}, nil
+	return []string{}, nil
 
 }
 
