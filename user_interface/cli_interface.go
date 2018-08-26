@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 13:26:31
+* @Last Modified time: 2018-08-26 13:53:29
  */
 
 package user_interface
@@ -116,7 +116,7 @@ func (gui *Cli_Gui) quit(g *gocui.Gui, v *gocui.View) error {
 func (gui *Cli_Gui) Layout(g *gocui.Gui) error {
 	_, maxY := g.Size()
 	gui.Monitor = New_Monitor(gui.Monitor_View, 31, 0)
-	send_bar := New_Send_Bar(gui.Send_View, 31, maxY-3, gui.Monitor.Write)
+	send_bar := New_Send_Bar(gui.Send_View, 31, maxY-3, gui.write_to_monitor)
 	gui.connection_info_layout(g)
 	exb := New_Explode_Button("test", 0, 8, 30, "explode", gui.Info_Loader, gui.Selection_Callback)
 	g.Update(gui.Monitor.Layout)
@@ -126,21 +126,19 @@ func (gui *Cli_Gui) Layout(g *gocui.Gui) error {
 	return nil
 }
 
+func (gui *Cli_Gui) write_to_monitor(mess string) {
+	gui.Monitor.Write(gui.RootGUI, mess)
+}
+
 func (gui *Cli_Gui) Info_Loader() []string {
 	return []string{"Hello", "My", "name", "is", "Matt"}
 }
 
 func (gui *Cli_Gui) Selection_Callback(selection string) {
-	view, err := gui.RootGUI.View("monitor_view")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Fprintln(view, fmt.Sprintf("Selection %v ", selection))
+	gui.Monitor.Write(gui.RootGUI, fmt.Sprintf("Selection %v ", selection))
 }
 
 func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
-	//maxX, _ := g.Size()
 	if v, err := g.SetView(gui.Connection_Info, 0, 0, 30, 7); err != nil {
 		if err != gocui.ErrUnknownView {
 			fmt.Println(g.Size())
@@ -164,7 +162,7 @@ func (gui *Cli_Gui) Reader_fmt() {
 		case read := <-reader:
 			mess, ok := read.Body[0].(string)
 			if ok {
-				gui.Monitor.Write(mess)
+				gui.Monitor.Write(gui.RootGUI, mess)
 			}
 		default:
 			continue
