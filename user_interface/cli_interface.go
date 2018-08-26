@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 16:29:44
+* @Last Modified time: 2018-08-25 22:43:56
 */
 
 package user_interface
@@ -20,27 +20,40 @@ type Cli_Gui struct{
 	Printer_Name string
 	reader_active bool
 	RootGUI *gocui.Gui
+
 	Connection_Info string
 	Monitor_View string
 	Send_View string
+	Baud_Button string
+	Port_Button string
+	Connect_Button string
+	Info_View string
+
+	port string
+	baud string
+
 	Mango *mango_interface.Mango
 }
 
 func New_Cli_Gui() *Cli_Gui {
-	cgui := new(Cli_Gui)
-	cgui.Printer_Name, _ = os.Hostname() 
-	cgui.reader_active = false
+	gui := new(Cli_Gui)
+	gui.Printer_Name, _ = os.Hostname() 
+	gui.reader_active = false
 
 	// names
-	cgui.Connection_Info = "connection_info"
-	cgui.Monitor_View = "monitor_view"
-	cgui.Send_View = "send_view"
+	gui.Connection_Info = "connection_info"
+	gui.Monitor_View = "monitor_view"
+	gui.Send_View = "send_view"
+	gui.Baud_Button = "baud_button"
+	gui.Port_Button = "port_button"
+	gui.Connect_Button = "connect_button"
+	gui.Info_View = "info_view"
 	var err error
-	cgui.Mango, err = mango_interface.NewMango()
+	gui.Mango, err = mango_interface.NewMango()
 	if err != nil{
 		panic(err)
 	}
-	return cgui
+	return gui
 }
 
 func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
@@ -77,6 +90,7 @@ func (gui *Cli_Gui) Screen_Init() (err error){
 	defer gui.RootGUI.Close()
 
 	gui.RootGUI.Cursor = true
+	gui.RootGUI.Mouse = true
 	gui.RootGUI.Highlight = true
 	gui.RootGUI.SelFgColor = gocui.ColorGreen
 
@@ -107,27 +121,46 @@ func (gui *Cli_Gui) layout(g *gocui.Gui) error{
 	gui.send_view_layout(g)
 	gui.monitor_view_layout(g)
 	gui.connection_info_layout(g)
+	exb := New_Explode_Button("test", 0, 8, 30, "explode", return_strings)
+	g.Update(exb.Layout)
 	
 	return nil
 }
 
+func return_strings() []string{
+	return []string{"Hello", "My", "name", "is", "Matt"}
+}
+
 func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
-	maxX, maxY := g.Size()
-	if v, err := g.SetView(gui.Connection_Info, 0, 0, maxX/5, maxY-1); err != nil {
+	//maxX, _ := g.Size()
+	if v, err := g.SetView(gui.Connection_Info, 0, 0, 30, 7); err != nil {
 		if err != gocui.ErrUnknownView {
-			fmt.Println(err)
-			return err
+			fmt.Println(g.Size())
+			panic(err)
 		}
 		v.Title = "Connection Info"
+		
 	}
 
 	return nil
 }
 
+func msg_me(g *gocui.Gui, v *gocui.View) error{
+	view, err := g.View("monitor_view")
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	x,y := g.Size()
+	fmt.Fprintln(view, fmt.Sprintf("button press %v %v", x, y))
+	
+	return err
+}
+
 func (gui *Cli_Gui) send_view_layout(g *gocui.Gui) (err error){
 	maxX, maxY := g.Size()
 
-	if v, err := g.SetView(gui.Send_View, maxX/5 + 1, maxY - maxY/10, maxX - 1, maxY-1); err != nil {
+	if v, err := g.SetView(gui.Send_View, 30 + 1, maxY - maxY/10, maxX - 1, (maxY - maxY/10) + 2); err != nil {
 		if err != gocui.ErrUnknownView {
 			fmt.Println(err)
 			return err
@@ -155,7 +188,7 @@ func (gui *Cli_Gui) send_view_clear(g *gocui.Gui, v *gocui.View) error {
 func (gui *Cli_Gui) monitor_view_layout(g *gocui.Gui) (err error){
 	maxX, maxY := g.Size()
 
-	if v, err := g.SetView(gui.Monitor_View, maxX/5 + 1, 0, maxX - 1, (maxY - maxY/10) - 1); err != nil {
+	if v, err := g.SetView(gui.Monitor_View, 30 + 1, 0, maxX - 1, (maxY - maxY/10) - 1); err != nil {
 		if err != gocui.ErrUnknownView {
 			fmt.Println(err)
 			return err
