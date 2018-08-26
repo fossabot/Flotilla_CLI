@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 13:53:29
+* @Last Modified time: 2018-08-26 14:23:52
  */
 
 package user_interface
@@ -116,18 +116,34 @@ func (gui *Cli_Gui) quit(g *gocui.Gui, v *gocui.View) error {
 func (gui *Cli_Gui) Layout(g *gocui.Gui) error {
 	_, maxY := g.Size()
 	gui.Monitor = New_Monitor(gui.Monitor_View, 31, 0)
-	send_bar := New_Send_Bar(gui.Send_View, 31, maxY-3, gui.write_to_monitor)
+	send_bar := New_Send_Bar(gui.Send_View, 31, maxY-3, gui.write_to_comm)
 	gui.connection_info_layout(g)
-	exb := New_Explode_Button("test", 0, 8, 30, "explode", gui.Info_Loader, gui.Selection_Callback)
+	port_button := New_Explode_Button(gui.Port_Button, 0, 8, 14, "Port Select", gui.Info_Loader, gui.Selection_Callback)
+	baud_button := New_Explode_Button(gui.Baud_Button, 15, 8, 15, "Baud Select", gui.get_bauds, gui.baud_select)
+	connect_button := New_Button(gui.Connect_Button, 0, 11, 30, "Connect", gui.connect_comm)
 	g.Update(gui.Monitor.Layout)
 	g.Update(send_bar.Layout)
-	g.Update(exb.Layout)
-
+	g.Update(port_button.Layout)
+	g.Update(baud_button.Layout)
+	g.Update(connect_button.Layout)
 	return nil
 }
 
-func (gui *Cli_Gui) write_to_monitor(mess string) {
+func (gui *Cli_Gui) write_to_comm(mess string) {
 	gui.Monitor.Write(gui.RootGUI, mess)
+}
+
+func (gui *Cli_Gui) get_bauds() []string{
+	return []string{"250000", "230400", "115200","57600", "38400", "19200", "9600"}
+}
+
+func (gui *Cli_Gui) baud_select(selection string) {
+	gui.Monitor.Write(gui.RootGUI, fmt.Sprintf("Selection %v ", selection))
+}
+
+func (gui *Cli_Gui) connect_comm(g *gocui.Gui, v *gocui.View) error{
+	gui.Monitor.Write(g, "connect!")
+	return nil
 }
 
 func (gui *Cli_Gui) Info_Loader() []string {
