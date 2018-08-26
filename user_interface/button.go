@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 21:58:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 22:44:25
+* @Last Modified time: 2018-08-26 11:55:13
 */
 package user_interface
 
@@ -39,21 +39,26 @@ func (b *Button) Layout(g *gocui.Gui) error{
 	return nil
 }
 
+type Explode_Interface interface{
+	Info_Loader() []string
+	Selection_Callback(selection string)
+}
+
 type Explode_Button struct{
 	name    string
 	x, y    int
 	w       int
 	label   string
-	info_loader func() []string
+	interaction Explode_Interface
 }
 
-func New_Explode_Button(name string, x,y,w int, label string, info_loader func() []string) *Explode_Button{
+func New_Explode_Button(name string, x,y,w int, label string, interaction Explode_Interface) *Explode_Button{
 	return &Explode_Button{name:name,
 						   x:x,
 						   y:y,
 						   w:w,
 						   label: label,
-						   info_loader:info_loader,
+						   interaction:interaction,
 						}
 }
 
@@ -78,12 +83,12 @@ func (b *Explode_Button) Layout(g *gocui.Gui) error{
 }
 
 func (b *Explode_Button) explode(g *gocui.Gui, v *gocui.View) error{
-	body := b.info_loader()
+	body := b.interaction.Info_Loader()
 	midx, midy := g.Size()
 	midx = midx / 2
 	midy = midy / 2
 	name := fmt.Sprintf("%s_explode", b.name)
-	explode := NewExplode(name, midx, midy, body)
+	explode := NewExplode(name, midx, midy, body, b.interaction.Selection_Callback)
 	g.Update(explode.Layout)
 	return nil
 }
@@ -93,9 +98,10 @@ type Explode struct {
 	x, y int
 	w, h int
 	body []string
+	select_callback func(selection string)
 }
 
-func NewExplode(name string, x, y int, body []string) *Explode {
+func NewExplode(name string, x, y int, body []string, select_callback func(selection string)) *Explode {
 	w := 0
 	for _, l := range body {
 		if len(l) > w {
@@ -105,7 +111,7 @@ func NewExplode(name string, x, y int, body []string) *Explode {
 	h := len(body) + 1
 	w = w + 1
 
-	return &Explode{name: name, x: x, y: y, w: w, h: h, body: body}
+	return &Explode{name: name, x: x, y: y, w: w, h: h, body: body, select_callback:select_callback}
 }
 
 func (w *Explode) Layout(g *gocui.Gui) error {
@@ -114,21 +120,83 @@ func (w *Explode) Layout(g *gocui.Gui) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		if err := g.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.destroy); err != nil {
+		if err := g.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, w.destroy); err != nil {
 			return err
 		}
-		if err := g.SetKeybinding(w.name, gocui.MouseLeft, gocui.ModNone, w.destroy); err != nil {
+		if err := g.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.select_and_destroy); err != nil {
+			return err
+		}
+		if err := g.SetKeybinding(w.name, gocui.MouseLeft, gocui.ModNone, w.select_and_destroy); err != nil {
+			return err
+		}
+		if err := g.SetKeybinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.move_select_up); err != nil {
+			return err
+		}
+		if err := g.SetKeybinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.move_select_down); err != nil {
 			return err
 		}
 		for _, line := range w.body{
 			fmt.Fprintln(v, line)
+		}
+
+		// Make it selected and highlight the first choice
+		v.Highlight=true
+		v.SelBgColor = gocui.ColorGreen
+		v.SelFgColor = gocui.ColorBlack
+		if _, err := g.SetCurrentView(v.Name()); err != nil {
+			return err
 		}
 		
 	}
 	return nil
 }
 
+func (w *Explode) select_and_destroy(g *gocui.Gui, v *gocui.View) error {
+	//send selected item
+	v.SetCursor(v.Cursor())
+	_, cy := v.Cursor()
+	l, err := v.Line(cy)
+	if err != nil {
+		l = ""
+		panic(err)
+	}
+	w.select_callback(l)
+	w.destroy(g, v)
+	return nil
+}
+
 func (w *Explode) destroy(g *gocui.Gui, v *gocui.View) error {
 	g.DeleteView(w.name)
+    g.DeleteKeybindings(w.name)
 	return nil
+}
+
+func (w *Explode) move_select_up(g *gocui.Gui, v *gocui.View) error {
+	_, cury := v.Cursor()
+	orgx, orgy := v.Origin()
+
+	desty := cury - 1
+
+	if desty == orgy - 1 {
+		desty = orgy
+	}
+
+	v.SetCursor(orgx, desty)
+	return nil
+
+}
+
+func (w *Explode) move_select_down(g *gocui.Gui, v *gocui.View) error {
+	_, cury := v.Cursor()
+	orgx, orgy := v.Origin()
+
+	desty := cury + 1
+
+	if desty == (orgy + w.h) {
+		desty = (orgy + w.h)
+	}
+
+	v.SetCursor(orgx, desty)
+	return nil
+
 }

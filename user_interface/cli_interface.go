@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-25 22:43:56
+* @Last Modified time: 2018-08-26 11:39:16
 */
 
 package user_interface
@@ -121,14 +121,23 @@ func (gui *Cli_Gui) layout(g *gocui.Gui) error{
 	gui.send_view_layout(g)
 	gui.monitor_view_layout(g)
 	gui.connection_info_layout(g)
-	exb := New_Explode_Button("test", 0, 8, 30, "explode", return_strings)
+	exb := New_Explode_Button("test", 0, 8, 30, "explode", gui)
 	g.Update(exb.Layout)
 	
 	return nil
 }
 
-func return_strings() []string{
+func (gui *Cli_Gui) Info_Loader() []string{
 	return []string{"Hello", "My", "name", "is", "Matt"}
+}
+
+func (gui *Cli_Gui) Selection_Callback(selection string){
+	view, err := gui.RootGUI.View("monitor_view")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Fprintln(view, fmt.Sprintf("Selection %v ", selection))
 }
 
 func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
@@ -197,7 +206,7 @@ func (gui *Cli_Gui) monitor_view_layout(g *gocui.Gui) (err error){
 		v.Autoscroll = true
 		v.Wrap = true
 		gui.reader_active = true
-		go gui.Reader_fmt()
+		//go gui.Reader_fmt()
 	}
 
 	return nil
