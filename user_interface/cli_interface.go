@@ -3,29 +3,29 @@
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
 * @Last Modified time: 2018-08-26 13:26:31
-*/
+ */
 
 package user_interface
 
-import(
+import (
 	"fmt"
-	"log"
 	"github.com/jroimartin/gocui"
 	"github.com/ximidar/mango_cli/mango_interface"
+	"log"
 )
 
-type Cli_Gui struct{
+type Cli_Gui struct {
 	reader_active bool
-	RootGUI *gocui.Gui
+	RootGUI       *gocui.Gui
 
 	Connection_Info string
-	Monitor_View string
-	Monitor Monitor_Interface
-	Send_View string
-	Baud_Button string
-	Port_Button string
-	Connect_Button string
-	Info_View string
+	Monitor_View    string
+	Monitor         Monitor_Interface
+	Send_View       string
+	Baud_Button     string
+	Port_Button     string
+	Connect_Button  string
+	Info_View       string
 
 	port string
 	baud string
@@ -47,7 +47,7 @@ func New_Cli_Gui() *Cli_Gui {
 	gui.Info_View = "info_view"
 	var err error
 	gui.Mango, err = mango_interface.NewMango()
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 	return gui
@@ -58,17 +58,16 @@ func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
 		return nil, err
 	}
 	view, err := g.SetViewOnTop(name)
-	if err != nil{
+	if err != nil {
 		view.SetCursor(view.Origin())
 	}
 
 	return view, err
 }
 
+func (gui *Cli_Gui) nextView(g *gocui.Gui, v *gocui.View) (err error) {
 
-func (gui *Cli_Gui) nextView(g *gocui.Gui, v *gocui.View) (err error){
-	
-	if v.Name() == gui.Connection_Info{
+	if v.Name() == gui.Connection_Info {
 		_, err = setCurrentViewOnTop(g, gui.Send_View)
 		g.Cursor = true
 	} else {
@@ -79,7 +78,7 @@ func (gui *Cli_Gui) nextView(g *gocui.Gui, v *gocui.View) (err error){
 	return err
 }
 
-func (gui *Cli_Gui) Screen_Init() (err error){
+func (gui *Cli_Gui) Screen_Init() (err error) {
 	gui.RootGUI, err = gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -114,24 +113,24 @@ func (gui *Cli_Gui) quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
 
-func (gui *Cli_Gui) Layout(g *gocui.Gui) error{
+func (gui *Cli_Gui) Layout(g *gocui.Gui) error {
 	_, maxY := g.Size()
-	gui.Monitor = New_Monitor(gui.Monitor_View, 31,0)
+	gui.Monitor = New_Monitor(gui.Monitor_View, 31, 0)
 	send_bar := New_Send_Bar(gui.Send_View, 31, maxY-3, gui.Monitor.Write)
 	gui.connection_info_layout(g)
 	exb := New_Explode_Button("test", 0, 8, 30, "explode", gui.Info_Loader, gui.Selection_Callback)
 	g.Update(gui.Monitor.Layout)
 	g.Update(send_bar.Layout)
 	g.Update(exb.Layout)
-	
+
 	return nil
 }
 
-func (gui *Cli_Gui) Info_Loader() []string{
+func (gui *Cli_Gui) Info_Loader() []string {
 	return []string{"Hello", "My", "name", "is", "Matt"}
 }
 
-func (gui *Cli_Gui) Selection_Callback(selection string){
+func (gui *Cli_Gui) Selection_Callback(selection string) {
 	view, err := gui.RootGUI.View("monitor_view")
 	if err != nil {
 		panic(err)
@@ -148,32 +147,29 @@ func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
 			panic(err)
 		}
 		v.Title = "Connection Info"
-		
+
 	}
 
 	return nil
 }
 
 func (gui *Cli_Gui) Reader_fmt() {
-	
+
 	reader, err := gui.Mango.Get_Comm_Signal()
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
-	for gui.reader_active{
-		select{
-		case read := <- reader:
+	for gui.reader_active {
+		select {
+		case read := <-reader:
 			mess, ok := read.Body[0].(string)
-			if ok{
+			if ok {
 				gui.Monitor.Write(mess)
-			}			
+			}
 		default:
 			continue
 
 		}
-		
-			
+
 	}
 }
-
-

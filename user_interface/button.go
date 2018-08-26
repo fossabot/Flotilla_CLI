@@ -3,15 +3,15 @@
 * @Date:   2018-08-25 21:58:08
 * @Last Modified by:   Ximidar
 * @Last Modified time: 2018-08-26 13:19:50
-*/
+ */
 package user_interface
 
-import(
-	"github.com/jroimartin/gocui"
+import (
 	"fmt"
+	"github.com/jroimartin/gocui"
 )
 
-type Button struct{
+type Button struct {
 	name    string
 	x, y    int
 	w       int
@@ -19,7 +19,7 @@ type Button struct{
 	handler func(g *gocui.Gui, v *gocui.View) error
 }
 
-func (b *Button) Layout(g *gocui.Gui) error{
+func (b *Button) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(b.name, b.x, b.y, b.x+b.w, b.y+2)
 	if err != nil {
 		if err != gocui.ErrUnknownView {
@@ -39,28 +39,27 @@ func (b *Button) Layout(g *gocui.Gui) error{
 	return nil
 }
 
-
-type Explode_Button struct{
-	name    string
-	x, y    int
-	w       int
-	label   string
-	get_body func() []string
+type Explode_Button struct {
+	name            string
+	x, y            int
+	w               int
+	label           string
+	get_body        func() []string
 	select_callback func(selection string)
 }
 
-func New_Explode_Button(name string, x,y,w int, label string, get_body func() []string,	select_callback func(selection string)) *Explode_Button{
-	return &Explode_Button{name:name,
-						   x:x,
-						   y:y,
-						   w:w,
-						   label: label,
-						   get_body:get_body,
-						   select_callback:select_callback,
-						}
+func New_Explode_Button(name string, x, y, w int, label string, get_body func() []string, select_callback func(selection string)) *Explode_Button {
+	return &Explode_Button{name: name,
+		x:               x,
+		y:               y,
+		w:               w,
+		label:           label,
+		get_body:        get_body,
+		select_callback: select_callback,
+	}
 }
 
-func (b *Explode_Button) Layout(g *gocui.Gui) error{
+func (b *Explode_Button) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(b.name, b.x, b.y, b.x+b.w, b.y+2)
 	if err != nil {
 		if err != gocui.ErrUnknownView {
@@ -80,7 +79,7 @@ func (b *Explode_Button) Layout(g *gocui.Gui) error{
 	return nil
 }
 
-func (b *Explode_Button) explode(g *gocui.Gui, v *gocui.View) error{
+func (b *Explode_Button) explode(g *gocui.Gui, v *gocui.View) error {
 	body := b.get_body()
 	midx, midy := g.Size()
 	midx = midx / 2
@@ -92,10 +91,10 @@ func (b *Explode_Button) explode(g *gocui.Gui, v *gocui.View) error{
 }
 
 type Explode struct {
-	name string
-	x, y int
-	w, h int
-	body []string
+	name            string
+	x, y            int
+	w, h            int
+	body            []string
 	select_callback func(selection string)
 }
 
@@ -109,7 +108,7 @@ func NewExplode(name string, x, y int, body []string, select_callback func(selec
 	h := len(body) + 1
 	w = w + 1
 
-	return &Explode{name: name, x: x, y: y, w: w, h: h, body: body, select_callback:select_callback}
+	return &Explode{name: name, x: x, y: y, w: w, h: h, body: body, select_callback: select_callback}
 }
 
 func (w *Explode) Layout(g *gocui.Gui) error {
@@ -133,18 +132,18 @@ func (w *Explode) Layout(g *gocui.Gui) error {
 		if err := g.SetKeybinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.move_select_down); err != nil {
 			return err
 		}
-		for _, line := range w.body{
+		for _, line := range w.body {
 			fmt.Fprintln(v, line)
 		}
 
 		// Make it selected and highlight the first choice
-		v.Highlight=true
+		v.Highlight = true
 		v.SelBgColor = gocui.ColorGreen
 		v.SelFgColor = gocui.ColorBlack
 		if _, err := g.SetCurrentView(v.Name()); err != nil {
 			return err
 		}
-		
+
 	}
 	return nil
 }
@@ -165,7 +164,7 @@ func (w *Explode) select_and_destroy(g *gocui.Gui, v *gocui.View) error {
 
 func (w *Explode) destroy(g *gocui.Gui, v *gocui.View) error {
 	g.DeleteView(w.name)
-    g.DeleteKeybindings(w.name)
+	g.DeleteKeybindings(w.name)
 	return nil
 }
 
@@ -175,7 +174,7 @@ func (w *Explode) move_select_up(g *gocui.Gui, v *gocui.View) error {
 
 	desty := cury - 1
 
-	if desty == orgy - 1 {
+	if desty == orgy-1 {
 		desty = orgy
 	}
 

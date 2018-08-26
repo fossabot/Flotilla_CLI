@@ -3,31 +3,31 @@
 * @Date:   2018-08-25 21:59:56
 * @Last Modified by:   Ximidar
 * @Last Modified time: 2018-08-26 13:26:07
-*/
+ */
 package user_interface
 
-import(
-	"github.com/jroimartin/gocui"
+import (
 	"fmt"
+	"github.com/jroimartin/gocui"
 )
 
-type Send_Bar struct{
+type Send_Bar struct {
 	name    string
 	x, y    int
 	handler func(message string)
 }
 
-func New_Send_Bar(name string, x,y int, handler func(message string)) *Send_Bar{
-	return &Send_Bar{name:name,
-					 x:x,
-					 y:y,
-					 handler:handler}
+func New_Send_Bar(name string, x, y int, handler func(message string)) *Send_Bar {
+	return &Send_Bar{name: name,
+		x:       x,
+		y:       y,
+		handler: handler}
 }
 
-func (w *Send_Bar) Layout(g *gocui.Gui) error{
+func (w *Send_Bar) Layout(g *gocui.Gui) error {
 	maxX, _ := g.Size()
 
-	if v, err := g.SetView(w.name, w.x, w.y, maxX -1 , w.y + 2); err != nil {
+	if v, err := g.SetView(w.name, w.x, w.y, maxX-1, w.y+2); err != nil {
 		if err != gocui.ErrUnknownView {
 			fmt.Println(err)
 			return err
