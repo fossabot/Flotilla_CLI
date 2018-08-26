@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 21:58:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 11:55:13
+* @Last Modified time: 2018-08-26 13:19:50
 */
 package user_interface
 
@@ -39,26 +39,24 @@ func (b *Button) Layout(g *gocui.Gui) error{
 	return nil
 }
 
-type Explode_Interface interface{
-	Info_Loader() []string
-	Selection_Callback(selection string)
-}
 
 type Explode_Button struct{
 	name    string
 	x, y    int
 	w       int
 	label   string
-	interaction Explode_Interface
+	get_body func() []string
+	select_callback func(selection string)
 }
 
-func New_Explode_Button(name string, x,y,w int, label string, interaction Explode_Interface) *Explode_Button{
+func New_Explode_Button(name string, x,y,w int, label string, get_body func() []string,	select_callback func(selection string)) *Explode_Button{
 	return &Explode_Button{name:name,
 						   x:x,
 						   y:y,
 						   w:w,
 						   label: label,
-						   interaction:interaction,
+						   get_body:get_body,
+						   select_callback:select_callback,
 						}
 }
 
@@ -83,12 +81,12 @@ func (b *Explode_Button) Layout(g *gocui.Gui) error{
 }
 
 func (b *Explode_Button) explode(g *gocui.Gui, v *gocui.View) error{
-	body := b.interaction.Info_Loader()
+	body := b.get_body()
 	midx, midy := g.Size()
 	midx = midx / 2
 	midy = midy / 2
 	name := fmt.Sprintf("%s_explode", b.name)
-	explode := NewExplode(name, midx, midy, body, b.interaction.Selection_Callback)
+	explode := NewExplode(name, midx, midy, body, b.select_callback)
 	g.Update(explode.Layout)
 	return nil
 }
