@@ -2,20 +2,21 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-09-15 19:54:28
+* @Last Modified time: 2018-09-15 22:29:38
  */
 
 package mango_interface
 
 import (
-	_"errors"
-	_"fmt"
+	"errors"
+	"fmt"
 	ms "github.com/ximidar/mango_structures"
 	"github.com/nats-io/go-nats"
 	_"os"
 	"time"
 	"log"
 	"encoding/json"
+	"strconv"
 )
 
 const(
@@ -31,27 +32,16 @@ const(
 
 	// pubs
 	READ_LINE = NAME + "read_line"
+	
 )
+
+// empty []byte for giving an empty payload
+var EMPTY []byte
 
 type Mango struct {
 	NC *nats.Conn
-	
+	Emit_Line chan string
 }
-
-/*
-Basic structure of requesting different things
-subj, payload := args[0], []byte(args[1])
-
-msg, err := nc.Request(subj, []byte(payload), 100*time.Millisecond)
-if err != nil {
-	if nc.LastError() != nil {
-		log.Fatalf("Error in Request: %v\n", nc.LastError())
-	}
-	log.Fatalf("Error in Request: %v\n", err)
-}
-log.Printf("Published [%s] : '%s'\n", subj, payload)
-log.Printf("Received [%v] : '%s'\n", msg.Subject, string(msg.Data))
-*/
 
 func NewMango() (*Mango, error) {
 	mgo := new(Mango)
@@ -62,6 +52,10 @@ func NewMango() (*Mango, error) {
 		log.Fatalf("Can't connect: %v\n", err)
 		return nil, err
 	}
+
+	// Subscribe to Read_Line
+	mgo.Emit_Line = make(chan string, 20)
+	mgo.NC.Subscribe(READ_LINE, mgo.emit_readline_msg)
 
 	return mgo, nil
 }
@@ -78,10 +72,9 @@ func (mgo *Mango) Make_Request(subject string, payload []byte) ([]byte, error){
 
 }
 
-// func (mgo *Mango) Get_Comm_Signal() (chan *dbus.Signal, error) {
-// 	c := make(chan string, 10)
-// 	return c, nil
-// }
+func (mgo *Mango) emit_readline_msg(msg *nats.Msg){
+	mgo.Emit_Line <- string(msg.Data)
+}
 
 func (mgo *Mango) Comm_Set_Connection_Options(port string, baud int32) error {
 
@@ -102,74 +95,107 @@ func (mgo *Mango) Comm_Set_Connection_Options(port string, baud int32) error {
 		panic(err)
 	}
 
-	log.Printf("Success: %v\nResponse: %v\n", response.Success, response.Message)
+	//log.Printf("\nInitialize Comm\nSuccess: %v\nResponse: %v\n", response.Success, response.Message)
 
 	return nil
 
 }
 
-// func (mgo *Mango) Comm_Connect() error {
-// 	call := mgo.Comm_Obj.Call("com.mango_core.commango.Open_Comm", 0)
+func (mgo *Mango) Comm_Connect() error {
+	call, err := mgo.Make_Request(CONNECT_COMM, EMPTY)
 
-// 	if call.Err != nil {
-// 		return call.Err
-// 	}
-// 	return nil
-// }
+	if err != nil {
+		fmt.Println("Could not connect")
+		return err
+	}
 
-// func (mgo *Mango) Comm_Disconnect() error {
-// 	call := mgo.Comm_Obj.Call("com.mango_core.commango.Close_Comm", 0)
+	reply := new(ms.Reply_String)
+	err = json.Unmarshal(call, reply)
 
-// 	if call.Err != nil {
-// 		return call.Err
-// 	}
-// 	return nil
+	//log.Printf("\nInitialize Comm\nSuccess: %v\nResponse: %v\n", reply.Success, reply.Message)
 
-// }
+	if !reply.Success{
+		return errors.New(fmt.Sprintf("Could not connect: %v", reply.Message))
+	}
 
-// //Call(method string, flags Flags, args ...interface{}) *Call
-// func (mgo *Mango) Comm_Get_Available_Ports() ([]string, error) {
+	return nil
+}
 
-// 	call := mgo.Comm_Obj.Call("com.mango_core.commango.Get_Available_Ports", 0)
+func (mgo *Mango) Comm_Disconnect() error {
+	call, err := mgo.Make_Request(DISTCONNECT_COMM, EMPTY)
 
-// 	if call.Err != nil {
-// 		return nil, call.Err
-// 	}
+	if err != nil {
+		fmt.Println("Could not disconnect")
+		return err
+	}
 
-// 	if len(call.Body) > 0 {
-// 		ports, ok := call.Body[0].([]string)
-// 		if !ok {
-// 			return nil, errors.New("Could not convert body to []string")
-// 		}
-// 		return ports, nil
-// 	}
+	reply := new(ms.Reply_String)
+	err = json.Unmarshal(call, reply)
 
-// 	return []string{}, nil
+	//log.Printf("\nInitialize Comm\nSuccess: %v\nResponse: %v\n", reply.Success, reply.Message)
 
-// }
+	if !reply.Success{
+		return errors.New(fmt.Sprintf("Could not disconnect: %v", reply.Message))
+	}
 
-// func (mgo *Mango) Comm_Write(command string) error {
-// 	expected_bytes := len(command)
-// 	call := mgo.Comm_Obj.Call("com.mango_core.commango.Write_Comm", 0, command)
+	return nil
+}
 
-// 	if call.Err != nil {
-// 		return call.Err
-// 	}
+func (mgo *Mango) Comm_Get_Available_Ports() ([]string, error) {
 
-// 	if len(call.Body) > 0 {
-// 		bytes_written, ok := call.Body[0].(int)
+	call, err := mgo.Make_Request(LIST_PORTS, []byte(""))
 
-// 		if !ok {
-// 			return errors.New("Could not cast body to int")
-// 		}
+	if err != nil {
+		return nil, err
+	}
 
-// 		if bytes_written != expected_bytes {
-// 			return errors.New("expected_bytes != written bytes")
-// 		}
+	// deconstruct the reply
+	reply := new(ms.Reply_JSON)
+	var ports []string
+	err = json.Unmarshal(call, reply)
 
-// 	} else {
-// 		return errors.New("Call did not return any bytes")
-// 	}
+	if err != nil{
+		fmt.Println("Could not deconstruct json package")
+		panic(err)
+	}
 
-// 	return nil
-// }
+	if reply.Success{
+		err = json.Unmarshal(reply.Message, &ports)
+		if err != nil {
+			fmt.Println("Could not deconstruct ports")
+			return nil, err
+		}
+		//fmt.Println(ports)
+	} else {
+		return nil, errors.New("Could not get ports")
+	}	
+
+	return ports, nil
+
+}
+
+func (mgo *Mango) Comm_Write(command string) error {
+	expected_bytes := len(command)
+	call, err := mgo.Make_Request(WRITE_COMM, []byte(command))
+
+	if err != nil {
+		log.Println("Could not Write Comm")
+		return err
+	}
+
+	// Check if the bytes match and if the call was successful
+	reply := new(ms.Reply_String)
+	err = json.Unmarshal(call, reply)
+	written, _ := strconv.Atoi(reply.Message)
+	//log.Printf("\nWrite Comm\nSuccess: %v\nResponse: %v\n", reply.Success, written)
+
+	if !reply.Success{
+		return errors.New(fmt.Sprintf("Could not write comm: %v", reply.Message))
+	}
+
+	if expected_bytes != written{
+		return errors.New(fmt.Sprintf("Expected %v != Written %v", expected_bytes, written))
+	}
+
+	return nil
+}

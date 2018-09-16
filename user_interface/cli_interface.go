@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 15:18:26
+* @Last Modified time: 2018-09-15 22:26:34
  */
 
 package user_interface
@@ -207,17 +207,10 @@ func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
 
 func (gui *Cli_Gui) Comm_Relay() {
 
-	reader, err := gui.Mango.Get_Comm_Signal()
-	if err != nil {
-		panic(err)
-	}
 	for gui.reader_active {
 		select {
-		case read := <-reader:
-			mess, ok := read.Body[0].(string)
-			if ok {
-				gui.Monitor.Write(gui.RootGUI, mess)
-			}
+		case read := <-gui.Mango.Emit_Line:
+			gui.Monitor.Write(gui.RootGUI, read)
 		default:
 			continue
 
