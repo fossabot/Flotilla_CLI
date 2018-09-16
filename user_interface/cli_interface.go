@@ -20,15 +20,15 @@ type Cli_Gui struct {
 	reader_active bool
 	RootGUI       *gocui.Gui
 
-	Connection_Info string
-	Monitor_View    string
-	Monitor         Monitor_Interface
-	Send_View       string
-	Baud_Button     string
-	Port_Button     string
-	Connect_Button  string
+	Connection_Info   string
+	Monitor_View      string
+	Monitor           Monitor_Interface
+	Send_View         string
+	Baud_Button       string
+	Port_Button       string
+	Connect_Button    string
 	Disconnect_Button string
-	Info_View       string
+	Info_View         string
 
 	port string
 	baud int32
@@ -145,8 +145,8 @@ func (gui *Cli_Gui) write_to_comm(mess string) {
 	gui.Mango.Comm_Write(mess)
 }
 
-func (gui *Cli_Gui) get_bauds() []string{
-	return []string{"250000", "230400", "115200","57600", "38400", "19200", "9600"}
+func (gui *Cli_Gui) get_bauds() []string {
+	return []string{"250000", "230400", "115200", "57600", "38400", "19200", "9600"}
 }
 
 func (gui *Cli_Gui) baud_select(selection string) {
@@ -159,19 +159,18 @@ func (gui *Cli_Gui) baud_select(selection string) {
 	}
 }
 
-func (gui *Cli_Gui) connect_comm(g *gocui.Gui, v *gocui.View) error{
+func (gui *Cli_Gui) connect_comm(g *gocui.Gui, v *gocui.View) error {
 	gui.Monitor.Write(g, "connect!")
 	gui.Mango.Comm_Set_Connection_Options(gui.port, gui.baud)
 	gui.Mango.Comm_Connect()
 	return nil
 }
 
-func (gui *Cli_Gui) disconnect_comm(g *gocui.Gui, v *gocui.View) error{
+func (gui *Cli_Gui) disconnect_comm(g *gocui.Gui, v *gocui.View) error {
 	gui.Monitor.Write(g, "disconnect!")
 	gui.Mango.Comm_Disconnect()
 	return nil
 }
-
 
 func (gui *Cli_Gui) get_ports() []string {
 	ports, err := gui.Mango.Comm_Get_Available_Ports()
@@ -179,8 +178,8 @@ func (gui *Cli_Gui) get_ports() []string {
 	if err != nil {
 		return []string{"Check commango daemon"}
 	}
-	
-	if len(ports) == 0{
+
+	if len(ports) == 0 {
 		return []string{"no ports available"}
 	}
 

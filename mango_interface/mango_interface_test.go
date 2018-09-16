@@ -35,7 +35,7 @@ func Test_Comm_set_up_and_write(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	mgo.Comm_Set_Connection_Options("/dev/ttyACM0", 115200)
 	mgo.Comm_Connect()
 	defer mgo.Comm_Disconnect()
@@ -67,5 +67,4 @@ func Test_Comm_set_up_and_write(t *testing.T) {
 
 	stop_reading = true
 
-	
 }

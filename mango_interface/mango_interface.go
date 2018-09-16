@@ -8,38 +8,37 @@
 package mango_interface
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	ms "github.com/ximidar/mango_structures"
 	"github.com/nats-io/go-nats"
-	_"os"
-	"time"
+	ms "github.com/ximidar/mango_structures"
 	"log"
-	"encoding/json"
+	_ "os"
 	"strconv"
+	"time"
 )
 
-const(
+const (
 	// address name
 	NAME = "commango."
 
 	// reply subs
-	LIST_PORTS = NAME + "list_ports"
-	INIT_COMM = NAME + "init_comm"
-	CONNECT_COMM = NAME + "connect_comm"
+	LIST_PORTS       = NAME + "list_ports"
+	INIT_COMM        = NAME + "init_comm"
+	CONNECT_COMM     = NAME + "connect_comm"
 	DISTCONNECT_COMM = NAME + "disconnect_comm"
-	WRITE_COMM = NAME + "write_comm"
+	WRITE_COMM       = NAME + "write_comm"
 
 	// pubs
 	READ_LINE = NAME + "read_line"
-	
 )
 
 // empty []byte for giving an empty payload
 var EMPTY []byte
 
 type Mango struct {
-	NC *nats.Conn
+	NC        *nats.Conn
 	Emit_Line chan string
 }
 
@@ -60,11 +59,11 @@ func NewMango() (*Mango, error) {
 	return mgo, nil
 }
 
-func (mgo *Mango) Make_Request(subject string, payload []byte) ([]byte, error){
+func (mgo *Mango) Make_Request(subject string, payload []byte) ([]byte, error) {
 
 	msg, err := mgo.NC.Request(subject, payload, 100*time.Millisecond)
 
-	if err != nil{
+	if err != nil {
 		panic(err) // TODO make some sort of intelligent way to parse errors
 	}
 
@@ -72,7 +71,7 @@ func (mgo *Mango) Make_Request(subject string, payload []byte) ([]byte, error){
 
 }
 
-func (mgo *Mango) emit_readline_msg(msg *nats.Msg){
+func (mgo *Mango) emit_readline_msg(msg *nats.Msg) {
 	mgo.Emit_Line <- string(msg.Data)
 }
 
@@ -91,7 +90,7 @@ func (mgo *Mango) Comm_Set_Connection_Options(port string, baud int32) error {
 	response := new(ms.Reply_String)
 	err = json.Unmarshal(call, response)
 
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 
@@ -114,7 +113,7 @@ func (mgo *Mango) Comm_Connect() error {
 
 	//log.Printf("\nInitialize Comm\nSuccess: %v\nResponse: %v\n", reply.Success, reply.Message)
 
-	if !reply.Success{
+	if !reply.Success {
 		return errors.New(fmt.Sprintf("Could not connect: %v", reply.Message))
 	}
 
@@ -134,7 +133,7 @@ func (mgo *Mango) Comm_Disconnect() error {
 
 	//log.Printf("\nInitialize Comm\nSuccess: %v\nResponse: %v\n", reply.Success, reply.Message)
 
-	if !reply.Success{
+	if !reply.Success {
 		return errors.New(fmt.Sprintf("Could not disconnect: %v", reply.Message))
 	}
 
@@ -154,12 +153,12 @@ func (mgo *Mango) Comm_Get_Available_Ports() ([]string, error) {
 	var ports []string
 	err = json.Unmarshal(call, reply)
 
-	if err != nil{
+	if err != nil {
 		fmt.Println("Could not deconstruct json package")
 		panic(err)
 	}
 
-	if reply.Success{
+	if reply.Success {
 		err = json.Unmarshal(reply.Message, &ports)
 		if err != nil {
 			fmt.Println("Could not deconstruct ports")
@@ -168,7 +167,7 @@ func (mgo *Mango) Comm_Get_Available_Ports() ([]string, error) {
 		//fmt.Println(ports)
 	} else {
 		return nil, errors.New("Could not get ports")
-	}	
+	}
 
 	return ports, nil
 
@@ -189,11 +188,11 @@ func (mgo *Mango) Comm_Write(command string) error {
 	written, _ := strconv.Atoi(reply.Message)
 	//log.Printf("\nWrite Comm\nSuccess: %v\nResponse: %v\n", reply.Success, written)
 
-	if !reply.Success{
+	if !reply.Success {
 		return errors.New(fmt.Sprintf("Could not write comm: %v", reply.Message))
 	}
 
-	if expected_bytes != written{
+	if expected_bytes != written {
 		return errors.New(fmt.Sprintf("Expected %v != Written %v", expected_bytes, written))
 	}
 

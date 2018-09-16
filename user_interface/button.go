@@ -7,9 +7,9 @@
 package user_interface
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jroimartin/gocui"
-	"errors"
 )
 
 type Button struct {
@@ -20,13 +20,13 @@ type Button struct {
 	handler func(g *gocui.Gui, v *gocui.View) error
 }
 
-func New_Button(name string, x,y,w int, label string, handler func(g *gocui.Gui, v *gocui.View) error) *Button{
+func New_Button(name string, x, y, w int, label string, handler func(g *gocui.Gui, v *gocui.View) error) *Button {
 	return &Button{name: name,
-				   x:x,
-				   y:y,
-				   w:w,
-				   label:label,
-				   handler:handler,
+		x:       x,
+		y:       y,
+		w:       w,
+		label:   label,
+		handler: handler,
 	}
 }
 
@@ -42,22 +42,22 @@ func (b *Button) Layout(g *gocui.Gui) error {
 		if err := g.SetKeybinding(b.name, gocui.MouseLeft, gocui.ModNone, b.handler); err != nil {
 			return err
 		}
-		if err := b.center_label(v); err != nil{
+		if err := b.center_label(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (b *Button) center_label(v *gocui.View) error{
+func (b *Button) center_label(v *gocui.View) error {
 	w, _ := v.Size()
-	if len(b.label) > w{
+	if len(b.label) > w {
 		return errors.New("Label is bigger than the button!")
 	}
 
-	offset_size := (w - len(b.label)) / 2 
+	offset_size := (w - len(b.label)) / 2
 	space_offset := ""
-	for i := 0; i < offset_size ; i++{
+	for i := 0; i < offset_size; i++ {
 		space_offset = space_offset + " "
 	}
 	fmt.Fprint(v, fmt.Sprintf("%v%v", space_offset, b.label))
@@ -96,22 +96,22 @@ func (b *Explode_Button) Layout(g *gocui.Gui) error {
 		if err := g.SetKeybinding(b.name, gocui.MouseLeft, gocui.ModNone, b.explode); err != nil {
 			return err
 		}
-		if err := b.center_label(v); err != nil{
+		if err := b.center_label(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (b *Explode_Button) center_label(v *gocui.View) error{
+func (b *Explode_Button) center_label(v *gocui.View) error {
 	w, _ := v.Size()
-	if len(b.label) > w{
+	if len(b.label) > w {
 		return errors.New("Label is bigger than the button!")
 	}
 
-	offset_size := (w - len(b.label)) / 2 
+	offset_size := (w - len(b.label)) / 2
 	space_offset := ""
-	for i := 0; i < offset_size ; i++{
+	for i := 0; i < offset_size; i++ {
 		space_offset = space_offset + " "
 	}
 	fmt.Fprint(v, fmt.Sprintf("%v%v", space_offset, b.label))
@@ -156,7 +156,7 @@ func (w *Explode) Layout(g *gocui.Gui) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		g.InputEsc=true
+		g.InputEsc = true
 		if err := g.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, w.destroy); err != nil {
 			return err
 		}

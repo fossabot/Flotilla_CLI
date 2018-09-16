@@ -62,14 +62,13 @@ func (w *Monitor) Write(g *gocui.Gui, mess string) {
 }
 
 // string cleaner will chop off the trailing \n
-func String_Cleaner(mess string) string{
-	if strings.HasSuffix(mess, "\n"){
+func String_Cleaner(mess string) string {
+	if strings.HasSuffix(mess, "\n") {
 		return mess[:len(mess)-1]
 	} else {
 		return mess
 	}
 }
-
 
 func (w *Monitor) Clear(g *gocui.Gui) {
 	v, err := g.View(w.name)
