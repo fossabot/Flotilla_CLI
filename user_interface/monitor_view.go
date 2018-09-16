@@ -2,13 +2,13 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 22:00:52
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 15:37:18
+* @Last Modified time: 2018-09-16 01:07:46
  */
 package user_interface
 
 import (
 	"fmt"
-	"github.com/jroimartin/gocui"
+	"github.com/ximidar/gocui"
 	"os"
 	"strings"
 )

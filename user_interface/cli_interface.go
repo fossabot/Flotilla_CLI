@@ -2,18 +2,18 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-09-15 22:26:34
+* @Last Modified time: 2018-09-16 01:07:14
  */
 
 package user_interface
 
 import (
 	"fmt"
-	"github.com/jroimartin/gocui"
+	"github.com/ximidar/gocui"
 	"github.com/ximidar/mango_cli/mango_interface"
 	"log"
 	"strconv"
-	"time"
+	_"time"
 )
 
 type Cli_Gui struct {
@@ -210,12 +210,9 @@ func (gui *Cli_Gui) Comm_Relay() {
 		select {
 		case read := <-gui.Mango.Emit_Line:
 			gui.Monitor.Write(gui.RootGUI, read)
-		default:
-			continue
-
 		}
-		busy_sleeper := time.Duration(50 * time.Millisecond)
-		time.Sleep(busy_sleeper)
+		// busy_sleeper := time.Duration(50 * time.Millisecond)
+		// time.Sleep(busy_sleeper)
 
 	}
 }

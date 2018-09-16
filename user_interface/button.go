@@ -2,14 +2,14 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 21:58:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-08-26 15:16:58
+* @Last Modified time: 2018-09-16 01:07:47
  */
 package user_interface
 
 import (
 	"errors"
 	"fmt"
-	"github.com/jroimartin/gocui"
+	"github.com/ximidar/gocui"
 )
 
 type Button struct {
