@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-09-15 22:29:38
+* @Last Modified time: 2018-09-16 16:12:54
  */
 
 package mango_interface
@@ -32,6 +32,7 @@ const (
 
 	// pubs
 	READ_LINE = NAME + "read_line"
+	WRITE_LINE = NAME + "write_line"
 )
 
 // empty []byte for giving an empty payload
