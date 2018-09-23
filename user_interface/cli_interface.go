@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-09-22 23:13:55
+* @Last Modified time: 2018-09-23 00:10:47
  */
 
 package user_interface
@@ -14,6 +14,7 @@ import (
 	"github.com/nats-io/go-nats"
 	"log"
 	"strconv"
+	"strings"
 	_"time"
 )
 
@@ -76,14 +77,9 @@ func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
 
 func (gui *Cli_Gui) nextView(g *gocui.Gui, v *gocui.View) (err error) {
 
-	if v.Name() == gui.Connection_Info {
-		_, err = setCurrentViewOnTop(g, gui.Send_View)
-		g.Cursor = true
-	} else {
-		_, err = setCurrentViewOnTop(g, gui.Connection_Info)
-		g.Cursor = false
-	}
-
+	_, err = setCurrentViewOnTop(g, gui.Send_View)
+	g.Cursor = true
+	
 	return err
 }
 
@@ -110,7 +106,7 @@ func (gui *Cli_Gui) Screen_Init() (err error) {
 	}
 
 	gui.reader_active = true
-	go gui.Comm_Relay()
+	gui.Comm_Relay()
 
 	if err := gui.RootGUI.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
@@ -223,13 +219,24 @@ func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
 
 func (gui *Cli_Gui) Comm_Relay() {
 
-	for gui.reader_active {
-		select {
-		case read := <-gui.Mango.Emit_Line:
-			gui.Monitor.Write(gui.RootGUI, read)
-		}
-		// busy_sleeper := time.Duration(50 * time.Millisecond)
-		// time.Sleep(busy_sleeper)
+	gui.Mango.NC.Subscribe("commango.read_line", gui.Comm_Read_Sub)
+	gui.Mango.NC.Subscribe("commango.write_line", gui.Comm_Write_Sub)
 
-	}
 }
+
+func (gui *Cli_Gui) Comm_Read_Sub(msg *nats.Msg){
+
+	data := string(msg.Data)
+	data = fmt.Sprintf("\u001b[46mRECV:\u001b[0m \n%v", data)
+	data = strings.Replace(data, "\n", "\n\t", -1)
+	data = strings.Replace(data, "echo:", "", -1)
+	gui.Monitor.Write(gui.RootGUI, data)
+}
+
+func (gui *Cli_Gui) Comm_Write_Sub(msg *nats.Msg){
+	data := string(msg.Data)
+	data = strings.Replace(data, "\n", "", -1)
+	data = fmt.Sprintf("\u001b[44mSENT: %v\u001b[0m", data)
+	gui.Monitor.Write(gui.RootGUI, data)
+}
+

@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-09-22 23:09:16
+* @Last Modified time: 2018-09-22 23:23:33
  */
 
 package mango_interface
@@ -58,10 +58,6 @@ func NewMango() (*Mango, error) {
 		return nil, err
 	}
 
-	// Subscribe to Read_Line
-	mgo.Emit_Line = make(chan string, 20)
-	mgo.NC.Subscribe(READ_LINE, mgo.emit_readline_msg)
-
 	return mgo, nil
 }
 
@@ -77,10 +73,6 @@ func (mgo *Mango) Make_Request(subject string, payload []byte) ([]byte, error) {
 
 	return msg.Data, nil
 
-}
-
-func (mgo *Mango) emit_readline_msg(msg *nats.Msg) {
-	mgo.Emit_Line <- string(msg.Data)
 }
 
 func (mgo *Mango) Comm_Set_Connection_Options(port string, baud int32) error {
