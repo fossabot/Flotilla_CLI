@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-09-16 01:07:14
+* @Last Modified time: 2018-09-22 23:13:55
  */
 
 package user_interface
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/ximidar/gocui"
 	"github.com/ximidar/mango_cli/mango_interface"
+	"github.com/nats-io/go-nats"
 	"log"
 	"strconv"
 	_"time"
@@ -198,7 +199,23 @@ func (gui *Cli_Gui) connection_info_layout(g *gocui.Gui) (err error) {
 			panic(err)
 		}
 		v.Title = "Connection Info"
+		status, err := gui.Mango.Comm_Get_Status()
+		if err != nil{
+			fmt.Fprintln(v, err.Error())
+		}
 
+		fmt.Fprintln(v, fmt.Sprintf("Port: %v\nBaud: %v\nConnected: %v", status.Port, status.Baud, status.Connected))
+		update_status := func(msg *nats.Msg){
+			newstatus, err := gui.Mango.Deconstruct_status(msg.Data)
+			if err != nil{
+				fmt.Fprintln(v, err.Error())
+			}
+			v.Clear()
+			v.SetCursor(v.Origin())
+			fmt.Fprintln(v, fmt.Sprintf("Port: %v\nBaud: %v\nConnected: %v", newstatus.Port, newstatus.Baud, newstatus.Connected))
+		}
+
+		gui.Mango.NC.Subscribe("commango.status_update", update_status)
 	}
 
 	return nil

@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-09-16 16:12:54
+* @Last Modified time: 2018-09-22 23:09:16
  */
 
 package mango_interface
@@ -29,10 +29,12 @@ const (
 	CONNECT_COMM     = NAME + "connect_comm"
 	DISTCONNECT_COMM = NAME + "disconnect_comm"
 	WRITE_COMM       = NAME + "write_comm"
+	GET_STATUS       = NAME + "get_status"
 
 	// pubs
 	READ_LINE = NAME + "read_line"
 	WRITE_LINE = NAME + "write_line"
+	STATUS_UPDATE = NAME + "status_update"
 )
 
 // empty []byte for giving an empty payload
@@ -41,12 +43,15 @@ var EMPTY []byte
 type Mango struct {
 	NC        *nats.Conn
 	Emit_Line chan string
+
+	Timeout time.Duration
 }
 
 func NewMango() (*Mango, error) {
 	mgo := new(Mango)
 	var err error
 	mgo.NC, err = nats.Connect(nats.DefaultURL)
+	mgo.Timeout = 100 * time.Millisecond
 
 	if err != nil {
 		log.Fatalf("Can't connect: %v\n", err)
@@ -62,11 +67,13 @@ func NewMango() (*Mango, error) {
 
 func (mgo *Mango) Make_Request(subject string, payload []byte) ([]byte, error) {
 
-	msg, err := mgo.NC.Request(subject, payload, 100*time.Millisecond)
+	msg, err := mgo.NC.Request(subject, payload, mgo.Timeout)
 
 	if err != nil {
 		panic(err) // TODO make some sort of intelligent way to parse errors
 	}
+
+	mgo.Timeout = 100 * time.Millisecond
 
 	return msg.Data, nil
 
@@ -101,7 +108,42 @@ func (mgo *Mango) Comm_Set_Connection_Options(port string, baud int32) error {
 
 }
 
+func (mgo *Mango) Comm_Get_Status() (*ms.Comm_Status, error){
+	call, err := mgo.Make_Request(GET_STATUS, EMPTY)
+
+	if err != nil{
+		fmt.Println("Could not get status")
+		return nil, err
+	}
+
+	return mgo.Deconstruct_status(call)
+
+}
+
+func (mgo *Mango) Deconstruct_status(call []byte) (*ms.Comm_Status, error){
+	reply := new(ms.Reply_JSON)
+	err := json.Unmarshal(call, reply)
+
+	if err != nil {
+		fmt.Println("Could not deconstruct json package")
+		panic(err)
+	}
+
+	if reply.Success {
+		status := new(ms.Comm_Status)
+		err = json.Unmarshal(reply.Message, status)
+		if err != nil {
+			fmt.Println("Could not deconstruct status")
+			return nil, err
+		}
+		return status, nil
+	} else {
+		return nil, errors.New("Could not get comm status")
+	}
+}
+
 func (mgo *Mango) Comm_Connect() error {
+	mgo.Timeout = 10 * time.Second //Ten Seconds to Connect
 	call, err := mgo.Make_Request(CONNECT_COMM, EMPTY)
 
 	if err != nil {
@@ -122,6 +164,7 @@ func (mgo *Mango) Comm_Connect() error {
 }
 
 func (mgo *Mango) Comm_Disconnect() error {
+	mgo.Timeout = 10 * time.Second //Ten Seconds to disconnect
 	call, err := mgo.Make_Request(DISTCONNECT_COMM, EMPTY)
 
 	if err != nil {
