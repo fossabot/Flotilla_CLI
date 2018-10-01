@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-09-23 00:10:47
+* @Last Modified time: 2018-10-01 02:51:49
  */
 
 package user_interface
@@ -10,7 +10,7 @@ package user_interface
 import (
 	"fmt"
 	"github.com/ximidar/gocui"
-	"github.com/ximidar/mango_cli/mango_interface"
+	"github.com/ximidar/Flotilla/Flotilla_CLI/flotilla_interface"
 	"github.com/nats-io/go-nats"
 	"log"
 	"strconv"
@@ -35,7 +35,7 @@ type Cli_Gui struct {
 	port string
 	baud int32
 
-	Mango *mango_interface.Mango
+	Mango *flotilla_interface.Mango
 }
 
 func New_Cli_Gui() *Cli_Gui {
@@ -56,7 +56,7 @@ func New_Cli_Gui() *Cli_Gui {
 	gui.baud = -1
 
 	var err error
-	gui.Mango, err = mango_interface.NewMango()
+	gui.Mango, err = flotilla_interface.NewMango()
 	if err != nil {
 		panic(err)
 	}

@@ -1,2 +1,2 @@
-# mango_cli
-CLI tool written in go for Mango OS
+# Flotilla_CLI
+CLI tool written in go for the Flotilla system
