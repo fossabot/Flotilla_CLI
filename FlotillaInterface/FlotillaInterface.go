@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-10-17 13:12:34
+* @Last Modified time: 2018-10-17 14:13:22
  */
 
 package FlotillaInterface
@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/nats-io/go-nats"
-	DS "github.com/ximidar/Flotilla/data_structures"
-	CS "github.com/ximidar/Flotilla/data_structures/CommStructures"
+	DS "github.com/ximidar/Flotilla/DataStructures"
+	CS "github.com/ximidar/Flotilla/DataStructures/CommStructures"
 )
 
 // EMPTY []byte for giving an empty payload
