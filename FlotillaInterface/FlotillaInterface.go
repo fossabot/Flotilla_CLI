@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-10-17 14:13:22
+* @Last Modified time: 2018-11-28 13:51:04
  */
 
 package FlotillaInterface
@@ -12,13 +12,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	_ "os"
 	"strconv"
 	"time"
 
 	"github.com/nats-io/go-nats"
 	DS "github.com/ximidar/Flotilla/DataStructures"
 	CS "github.com/ximidar/Flotilla/DataStructures/CommStructures"
+	FS "github.com/ximidar/Flotilla/DataStructures/FileStructures"
+	"github.com/ximidar/Flotilla/Flotilla_File_Manager/Files"
 )
 
 // EMPTY []byte for giving an empty payload
@@ -236,4 +237,68 @@ func (fi *FlotillaInterface) CommWrite(command string) error {
 	}
 
 	return nil
+}
+
+// GetFileStructure will use Request the NATS server for the structure of the filesystem
+func (fi *FlotillaInterface) GetFileStructure() (map[string]*Files.File, error) {
+
+	fileRequest, err := FS.NewFileAction(FS.GetFileStructure, "")
+	if err != nil {
+		return nil, err
+	}
+
+	msg, err := fileRequest.SendAction(fi.NC, 5*time.Second)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Turn msg.Data into raw structure json data
+	data, err := fi.ExtractDataJSON(msg.Data)
+	if err != nil {
+		return nil, err
+	}
+	// Convert Raw JSON data into map
+	structureMap, err := fi.CreateStructureMapFromJSON(data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return structureMap, nil
+
+}
+
+// CreateStructureMapFromJSON will take in byte data from a raw JSON object and turn it into a
+// structure.
+func (fi *FlotillaInterface) CreateStructureMapFromJSON(structure []byte) (map[string]*Files.File, error) {
+
+	structureMap := make(map[string]*Files.File)
+
+	// unmarshal data
+	err := json.Unmarshal(structure, &structureMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO check if structure has sub objects that need to be converted.
+	return structureMap, nil
+}
+
+// ExtractDataJSON will take a flotilla message and detect success, then return the raw json data.
+func (fi *FlotillaInterface) ExtractDataJSON(rawData []byte) ([]byte, error) {
+	msgdata := DS.ReplyJSON{}
+
+	// unmarshal msg data
+	err := json.Unmarshal(rawData, &msgdata)
+	if err != nil {
+		return nil, err
+	}
+
+	if msgdata.Success {
+		return msgdata.Message, nil
+	}
+
+	return nil, errors.New("JSON Call failed")
 }
