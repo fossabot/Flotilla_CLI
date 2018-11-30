@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-11-29 13:14:25
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-30 14:35:32
+* @Last Modified time: 2018-11-30 15:26:32
  */
 
 // Package commtab is the user interface for connecting and monitoring
@@ -36,6 +36,7 @@ type CommTab struct {
 	ConnectButton    string
 	DisconnectButton string
 	InfoView         string
+	x, y             int
 
 	port string
 	baud int32
@@ -44,9 +45,11 @@ type CommTab struct {
 }
 
 // NewCommTab will Create a CommTab object
-func NewCommTab(g *gocui.Gui) *CommTab {
+func NewCommTab(x, y int, g *gocui.Gui) *CommTab {
 	gui := new(CommTab)
 	gui.RootGUI = g
+	gui.x = x
+	gui.y = y
 	gui.readerActive = false
 
 	// names
@@ -100,13 +103,13 @@ func (gui *CommTab) nextView(g *gocui.Gui, v *gocui.View) (err error) {
 // Layout is CommTab's gocui Layout Function
 func (gui *CommTab) Layout(g *gocui.Gui) error {
 	_, maxY := g.Size()
-	gui.Monitor = NewMonitor(gui.MonitorView, 31, 0)
-	sendBar := NewSendBar(gui.SendView, 31, maxY-3, gui.writeToComm)
+	gui.Monitor = NewMonitor(gui.MonitorView, 31+gui.x, 0+gui.y)
+	sendBar := NewSendBar(gui.SendView, 31+gui.x, maxY-3, gui.writeToComm)
 	gui.connectionInfoLayout(g)
-	portButton := CommonBlocks.NewExplodeButton(gui.PortButton, 0, 8, 14, "Port Select", gui.getPorts, gui.portSelect)
-	baudButton := CommonBlocks.NewExplodeButton(gui.BaudButton, 15, 8, 15, "Baud Select", gui.getBauds, gui.baudSelect)
-	connectButton := CommonBlocks.NewButton(gui.ConnectButton, 0, 11, 30, "Connect", gui.connectComm)
-	disconnectButton := CommonBlocks.NewButton(gui.DisconnectButton, 0, 14, 30, "Disconnect", gui.disconnectComm)
+	portButton := CommonBlocks.NewExplodeButton(gui.PortButton, 0+gui.x, 8+gui.y, 14, "Port Select", gui.getPorts, gui.portSelect)
+	baudButton := CommonBlocks.NewExplodeButton(gui.BaudButton, 15+gui.x, 8+gui.y, 15, "Baud Select", gui.getBauds, gui.baudSelect)
+	connectButton := CommonBlocks.NewButton(gui.ConnectButton, 0+gui.x, 11+gui.y, 30, "Connect", gui.connectComm)
+	disconnectButton := CommonBlocks.NewButton(gui.DisconnectButton, 0+gui.x, 14+gui.y, 30, "Disconnect", gui.disconnectComm)
 	g.Update(gui.Monitor.Layout)
 	g.Update(sendBar.Layout)
 	g.Update(portButton.Layout)
@@ -168,7 +171,7 @@ func (gui *CommTab) portSelect(selection string) {
 }
 
 func (gui *CommTab) connectionInfoLayout(g *gocui.Gui) (err error) {
-	if v, err := g.SetView(gui.ConnectionInfo, 0, 0, 30, 7); err != nil {
+	if v, err := g.SetView(gui.ConnectionInfo, 0+gui.x, 0+gui.y, 30, 7); err != nil {
 		if err != gocui.ErrUnknownView {
 			fmt.Println(g.Size())
 			panic(err)

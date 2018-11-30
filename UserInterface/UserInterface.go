@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-30 14:41:06
+* @Last Modified time: 2018-11-30 15:24:04
  */
 
 package UserInterface
@@ -69,7 +69,7 @@ func (gui *CliGui) Layout(g *gocui.Gui) error {
 }
 
 func (gui *CliGui) setupCommTab(g *gocui.Gui) error {
-	CommTab := commtab.NewCommTab(g)
+	CommTab := commtab.NewCommTab(0, 2, g)
 	CommTab.Name = "CommTab"
 	g.Update(CommTab.Layout)
 	return nil
