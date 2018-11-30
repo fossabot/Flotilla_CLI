@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:53:05
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-10-17 13:24:14
+* @Last Modified time: 2018-11-30 14:08:27
  */
 
 package CLTools
@@ -49,7 +49,10 @@ var printerface = &cobra.Command{
 	Short: "Show the cli UI for Flotilla",
 	Long:  `This will open the cli UI for Flotilla. This has tools for monitoring the command line and starting prints (or it will in the future)`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cligui := UserInterface.NewCliGui()
+		cligui, err := UserInterface.NewCliGui()
+		if err != nil {
+			panic(err)
+		}
 		cligui.ScreenInit()
 	},
 }

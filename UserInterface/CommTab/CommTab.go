@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-11-29 13:14:25
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-29 13:27:44
+* @Last Modified time: 2018-11-30 14:35:32
  */
 
 // Package commtab is the user interface for connecting and monitoring
@@ -25,6 +25,7 @@ import (
 type CommTab struct {
 	readerActive bool
 	RootGUI      *gocui.Gui
+	Name         string
 
 	ConnectionInfo   string
 	MonitorView      string
@@ -43,8 +44,9 @@ type CommTab struct {
 }
 
 // NewCommTab will Create a CommTab object
-func NewCommTab() *CommTab {
+func NewCommTab(g *gocui.Gui) *CommTab {
 	gui := new(CommTab)
+	gui.RootGUI = g
 	gui.readerActive = false
 
 	// names
@@ -65,6 +67,13 @@ func NewCommTab() *CommTab {
 	if err != nil {
 		panic(err)
 	}
+
+	if err := gui.RootGUI.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView); err != nil {
+		log.Panicln(err)
+	}
+	gui.readerActive = true
+	gui.CommRelay()
+
 	return gui
 }
 
@@ -86,43 +95,6 @@ func (gui *CommTab) nextView(g *gocui.Gui, v *gocui.View) (err error) {
 	g.Cursor = true
 
 	return err
-}
-
-// ScreenInit will initialize the screen
-func (gui *CommTab) ScreenInit() (err error) {
-	gui.RootGUI, err = gocui.NewGui(gocui.OutputNormal)
-	if err != nil {
-		log.Panicln(err)
-	}
-	defer gui.RootGUI.Close()
-
-	gui.RootGUI.Cursor = true
-	gui.RootGUI.Mouse = true
-	gui.RootGUI.Highlight = true
-	gui.RootGUI.SelFgColor = gocui.ColorGreen
-
-	gui.RootGUI.SetManagerFunc(gui.Layout)
-
-	if err := gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
-		log.Panicln(err)
-	}
-
-	if err := gui.RootGUI.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView); err != nil {
-		log.Panicln(err)
-	}
-
-	gui.readerActive = true
-	gui.CommRelay()
-
-	if err := gui.RootGUI.MainLoop(); err != nil && err != gocui.ErrQuit {
-		log.Panicln(err)
-	}
-	return
-}
-
-func (gui *CommTab) quit(g *gocui.Gui, v *gocui.View) error {
-	gui.readerActive = false
-	return gocui.ErrQuit
 }
 
 // Layout is CommTab's gocui Layout Function
