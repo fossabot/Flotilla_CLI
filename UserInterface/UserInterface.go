@@ -2,19 +2,20 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-30 15:24:04
+* @Last Modified time: 2018-11-30 16:53:40
  */
 
 package UserInterface
 
 import (
 	"github.com/ximidar/Flotilla/Flotilla_CLI/UserInterface/CommTab"
+	"github.com/ximidar/Flotilla/Flotilla_CLI/UserInterface/CommonBlocks"
 	"github.com/ximidar/gocui"
 )
 
 // CliGui is an object that will instantiate the ui
 type CliGui struct {
-	TabList          []string
+	TabList          *CommonBlocks.Tabs
 	CurrentTabNumber int
 	RootGUI          *gocui.Gui
 }
@@ -22,7 +23,9 @@ type CliGui struct {
 // NewCliGui is the constructor for CliGui
 func NewCliGui() (*CliGui, error) {
 	cli := new(CliGui)
-	cli.TabList = append(cli.TabList, "CommTab")
+	cli.TabList = CommonBlocks.NewTabs(0, 0, "Tabs")
+	cli.TabList.AddTab("OrgTab", "Org", cli.CommTabHandler)
+
 	cli.CurrentTabNumber = 0
 
 	return cli, nil
@@ -58,19 +61,41 @@ func (gui *CliGui) ScreenInit() (err error) {
 
 }
 
+// CheckSize makes sure the size of the screen is big enough to accomodate the tool
+func (gui *CliGui) CheckSize(x, y int) bool {
+	if x > 30 || y > 30 {
+		return true
+	}
+	return false
+}
+
 // Layout is a function for Gocui to help layout the screen
 func (gui *CliGui) Layout(g *gocui.Gui) error {
+	x, y := g.Size()
+	if !gui.CheckSize(x, y) {
+		return nil
+	}
+
 	err := gui.setupCommTab(g)
 
 	if err != nil {
 		return err
 	}
+	g.Update(gui.TabList.Layout)
+	return nil
+}
+
+func (gui *CliGui) CommTabHandler(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
 func (gui *CliGui) setupCommTab(g *gocui.Gui) error {
-	CommTab := commtab.NewCommTab(0, 2, g)
-	CommTab.Name = "CommTab"
+
+	// Make Tab
+	gui.TabList.AddTab("CommTab", "Comm", gui.CommTabHandler)
+
+	CommTab := commtab.NewCommTab(0, 3, g)
+	CommTab.Name = "CommTabContents"
 	g.Update(CommTab.Layout)
 	return nil
 }
@@ -87,21 +112,21 @@ func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
 	return view, err
 }
 
-func (gui *CliGui) nextView(g *gocui.Gui, v *gocui.View) (err error) {
+// func (gui *CliGui) nextView(g *gocui.Gui, v *gocui.View) (err error) {
 
-	lentabs := len(gui.TabList)
+// 	lentabs := len(gui.TabList)
 
-	if gui.CurrentTabNumber >= lentabs {
-		gui.CurrentTabNumber = 0
-	} else {
-		gui.CurrentTabNumber++
-	}
+// 	if gui.CurrentTabNumber >= lentabs {
+// 		gui.CurrentTabNumber = 0
+// 	} else {
+// 		gui.CurrentTabNumber++
+// 	}
 
-	_, err = setCurrentViewOnTop(g, gui.TabList[gui.CurrentTabNumber])
-	g.Cursor = true
+// 	_, err = setCurrentViewOnTop(g, gui.TabList[gui.CurrentTabNumber])
+// 	g.Cursor = true
 
-	return err
-}
+// 	return err
+// }
 
 func (gui *CliGui) quit(g *gocui.Gui, v *gocui.View) error {
 	// TODO add a function here that will tell all running tabs to quit
