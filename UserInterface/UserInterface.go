@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-30 16:53:40
+* @Last Modified time: 2018-11-30 19:21:18
  */
 
 package UserInterface
@@ -24,7 +24,6 @@ type CliGui struct {
 func NewCliGui() (*CliGui, error) {
 	cli := new(CliGui)
 	cli.TabList = CommonBlocks.NewTabs(0, 0, "Tabs")
-	cli.TabList.AddTab("OrgTab", "Org", cli.CommTabHandler)
 
 	cli.CurrentTabNumber = 0
 
@@ -43,6 +42,10 @@ func (gui *CliGui) ScreenInit() (err error) {
 	gui.RootGUI.Mouse = true
 	gui.RootGUI.Highlight = true
 	gui.RootGUI.SelFgColor = gocui.ColorGreen
+
+	// Make Tabs
+	gui.TabList.AddTab("CommTab", "Comm", gui.CommTabHandler)
+	gui.TabList.AddTab("OrgTab", "Org", gui.CommTabHandler)
 
 	gui.RootGUI.SetManagerFunc(gui.Layout)
 
@@ -90,9 +93,6 @@ func (gui *CliGui) CommTabHandler(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *CliGui) setupCommTab(g *gocui.Gui) error {
-
-	// Make Tab
-	gui.TabList.AddTab("CommTab", "Comm", gui.CommTabHandler)
 
 	CommTab := commtab.NewCommTab(0, 3, g)
 	CommTab.Name = "CommTabContents"

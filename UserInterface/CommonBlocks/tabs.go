@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-11-30 15:43:19
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-30 17:08:58
+* @Last Modified time: 2018-11-30 19:25:29
  */
 
 package CommonBlocks
@@ -10,43 +10,48 @@ package CommonBlocks
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/ximidar/gocui"
 )
 
 // Tabs will organize all Tab Objects
 type Tabs struct {
-	x, y    int
+	X, Y    int
 	Name    string
 	TabList []string
 	Tabs    []*Tab
 }
 
 func NewTabs(x, y int, Name string) *Tabs {
-	tabs := Tabs{x: x, y: y, Name: Name, Tabs: make([]*Tab, 0), TabList: make([]string, 0)}
-	return &tabs
+	tabs := new(Tabs)
+	tabs.Name = Name
+	tabs.X = x
+	tabs.Y = y
+
+	return tabs
 }
 
 // Layout Will Layout tabs as needed
 func (tabs *Tabs) Layout(g *gocui.Gui) error {
-	// MaxX, _ := g.Size()
-	// NumberOfTabs := len(tabs.Tabs)
-	spacing := 30 //int(math.Abs(math.Min(30, int(float64(NumberOfTabs)/float64(MaxX)))))
+	MaxX, _ := g.Size()
+	NumberOfTabs := len(tabs.Tabs)
+	spacing := int(math.Abs(math.Min(15, float64(MaxX)/float64(NumberOfTabs))))
 
 	// iterate over tabs and arrange them
-	x := tabs.x
-	y := tabs.y
+	x := tabs.X
+	y := tabs.Y
 	h := 2
 
 	// Update the layout
-	for _, tab := range tabs.Tabs {
-		tab.X = x
-		tab.Y = y
-		tab.W = spacing
-		tab.H = h
-		g.Update(tab.Layout)
+	for index := range tabs.Tabs {
+		tabs.Tabs[index].X = x
+		tabs.Tabs[index].Y = y
+		tabs.Tabs[index].W = spacing
+		tabs.Tabs[index].H = h
+		g.Update(tabs.Tabs[index].Layout)
 
-		x = x + spacing + 2
+		x = x + spacing + 1
 
 	}
 	return nil
@@ -54,7 +59,7 @@ func (tabs *Tabs) Layout(g *gocui.Gui) error {
 
 // AddTab will add a new tab to the tab bar
 func (tabs *Tabs) AddTab(Name string, Label string, Handler func(g *gocui.Gui, v *gocui.View) error) {
-	tab := NewTab(0, 0, 0, 0, Name, Label, Handler)
+	tab := NewTab(10, 10, 10, 10, Name, Label, Handler)
 
 	tabs.TabList = append(tabs.TabList, Name)
 	tabs.Tabs = append(tabs.Tabs, tab)
@@ -84,16 +89,13 @@ func (tab *Tab) Layout(g *gocui.Gui) error {
 		}
 	}
 	if err := g.SetKeybinding(tab.Name, gocui.KeyEnter, gocui.ModNone, tab.Handler); err != nil {
-		//fmt.Println("Couldn't Bind")
 		return err
 	}
 
 	if err := g.SetKeybinding(tab.Name, gocui.MouseLeft, gocui.ModNone, tab.Handler); err != nil {
-		//fmt.Println("Couldn't Bind")
 		return err
 	}
 	if err := tab.centerLabel(v); err != nil {
-		//fmt.Println("Couldn't Center View")
 		return err
 	}
 
@@ -111,6 +113,7 @@ func (tab *Tab) centerLabel(v *gocui.View) error {
 	for i := 0; i < offsetSize; i++ {
 		spaceOffset = spaceOffset + " "
 	}
+	v.Clear()
 	fmt.Fprint(v, fmt.Sprintf("%v%v", spaceOffset, tab.Label))
 	return nil
 }
