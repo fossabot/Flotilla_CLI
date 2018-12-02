@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-02 15:17:54
+* @Last Modified time: 2018-12-02 15:27:31
  */
 
 package UserInterface
@@ -77,9 +77,10 @@ func (gui *CliGui) UpdateTab(name string) {
 
 	// Delete all views that are not apart of the currently slected tab
 	for _, view := range gui.RootGUI.Views() {
-		if view.Name() != "CommTab" || view.Name() != "FileTab" || view.Name() != "Tabs" {
-			gui.RootGUI.DeleteKeybindings(view.Name())
-			gui.RootGUI.DeleteView(view.Name())
+		name = view.Name()
+		if name != "CommTab" && name != "FileTab" && name != "Tabs" {
+			gui.RootGUI.DeleteKeybindings(name)
+			gui.RootGUI.DeleteView(name)
 		}
 	}
 
