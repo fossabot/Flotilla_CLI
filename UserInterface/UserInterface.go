@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-01 16:33:32
+* @Last Modified time: 2018-12-02 15:17:54
  */
 
 package UserInterface
@@ -10,22 +10,24 @@ package UserInterface
 import (
 	"github.com/ximidar/Flotilla/Flotilla_CLI/UserInterface/CommTab"
 	"github.com/ximidar/Flotilla/Flotilla_CLI/UserInterface/CommonBlocks"
+	"github.com/ximidar/Flotilla/Flotilla_CLI/UserInterface/FileSystemTab"
 	"github.com/ximidar/gocui"
 )
 
 // CliGui is an object that will instantiate the ui
 type CliGui struct {
-	TabList          *CommonBlocks.Tabs
-	CommTab          *commtab.CommTab
-	CurrentTabNumber int
-	RootGUI          *gocui.Gui
+	TabList        *CommonBlocks.Tabs
+	CommTab        *commtab.CommTab
+	FileTab        *FileSystemTab.FileSystemTab
+	CurrentTabName string
+	RootGUI        *gocui.Gui
 }
 
 // NewCliGui is the constructor for CliGui
 func NewCliGui() (*CliGui, error) {
 	cli := new(CliGui)
-	cli.TabList = CommonBlocks.NewTabs(0, 0, "Tabs")
-	cli.CurrentTabNumber = 0
+	cli.TabList = CommonBlocks.NewTabs(0, 0, "Tabs", cli)
+	cli.CurrentTabName = "CommTab"
 
 	return cli, nil
 }
@@ -43,8 +45,8 @@ func (gui *CliGui) ScreenInit() (err error) {
 	gui.RootGUI.SelFgColor = gocui.ColorGreen
 
 	// Make Tabs
-	gui.TabList.AddTab("CommTab", "Comm", gui.CommTabHandler)
-	gui.TabList.AddTab("OrgTab", "Org", gui.CommTabHandler)
+	gui.TabList.AddTab("CommTab", "Comm")
+	gui.TabList.AddTab("FileTab", "Files")
 
 	gui.RootGUI.SetManagerFunc(gui.Layout)
 
@@ -57,21 +59,35 @@ func (gui *CliGui) ScreenInit() (err error) {
 	// }
 
 	err = gui.setupCommTab()
+	err = gui.setupFileTab()
 	if err != nil {
 		return err
 	}
 
 	if err := gui.RootGUI.MainLoop(); err != nil && err != gocui.ErrQuit {
 		panic(err)
-		return err
+		//return err
 	}
 	return
 
 }
 
+func (gui *CliGui) UpdateTab(name string) {
+	gui.CurrentTabName = name
+
+	// Delete all views that are not apart of the currently slected tab
+	for _, view := range gui.RootGUI.Views() {
+		if view.Name() != "CommTab" || view.Name() != "FileTab" || view.Name() != "Tabs" {
+			gui.RootGUI.DeleteKeybindings(view.Name())
+			gui.RootGUI.DeleteView(view.Name())
+		}
+	}
+
+}
+
 // CheckSize makes sure the size of the screen is big enough to accomodate the tool
 func (gui *CliGui) CheckSize(x, y int) bool {
-	if x > 30 || y > 30 {
+	if x > 88 || y > 20 {
 		return true
 	}
 	return false
@@ -83,11 +99,21 @@ func (gui *CliGui) Layout(g *gocui.Gui) error {
 	if !gui.CheckSize(x, y) {
 		return nil
 	}
-	g.Update(gui.CommTab.Layout)
+
 	g.Update(gui.TabList.Layout)
+
+	//Update Tab based on Selected Tab
+	switch gui.CurrentTabName {
+	case "CommTab":
+		g.Update(gui.CommTab.Layout)
+	case "FileTab":
+		g.Update(gui.FileTab.Layout)
+	}
+
 	return nil
 }
 
+// CommTabHandlder will controll pulling up the CommTab Contents.
 func (gui *CliGui) CommTabHandler(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
@@ -95,9 +121,15 @@ func (gui *CliGui) CommTabHandler(g *gocui.Gui, v *gocui.View) error {
 func (gui *CliGui) setupCommTab() error {
 
 	gui.CommTab = commtab.NewCommTab(0, 3, gui.RootGUI)
-	gui.CommTab.Name = "CommTabContents"
+	gui.CommTab.Name = "CommContents"
 
 	return nil
+}
+
+func (gui *CliGui) setupFileTab() error {
+	var err error
+	gui.FileTab, err = FileSystemTab.NewFileSystemTab("FileContents", 0, 0, 30, 2)
+	return err
 }
 
 func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
