@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 21:59:56
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-29 13:16:55
+* @Last Modified time: 2018-12-01 14:58:14
  */
 package commtab
 
@@ -29,9 +29,9 @@ func NewSendBar(name string, x, y int, handler func(message string)) *SendBar {
 
 // Layout is SendBar's Gocui Layout Function
 func (w *SendBar) Layout(g *gocui.Gui) error {
-	maxX, _ := g.Size()
+	maxX, MaxY := g.Size()
 
-	if v, err := g.SetView(w.name, w.x, w.y, maxX-1, w.y+2); err != nil {
+	if v, err := g.SetView(w.name, w.x, MaxY+w.y, maxX-1, (MaxY+w.y)+2); err != nil {
 		if err != gocui.ErrUnknownView {
 			fmt.Println(err)
 			return err

@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-28 13:51:04
+* @Last Modified time: 2018-12-01 14:49:41
  */
 
 package FlotillaInterface
@@ -54,7 +54,10 @@ func (fi *FlotillaInterface) MakeRequest(subject string, payload []byte) ([]byte
 	msg, err := fi.NC.Request(subject, payload, fi.Timeout)
 
 	if err != nil {
-		panic(err) // TODO make some sort of intelligent way to parse errors
+		if err == nats.ErrTimeout {
+			return nil, err
+		}
+		return nil, err
 	}
 
 	fi.Timeout = 100 * time.Millisecond

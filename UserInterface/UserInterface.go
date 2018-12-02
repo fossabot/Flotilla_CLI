@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-30 19:21:18
+* @Last Modified time: 2018-12-01 16:33:32
  */
 
 package UserInterface
@@ -16,6 +16,7 @@ import (
 // CliGui is an object that will instantiate the ui
 type CliGui struct {
 	TabList          *CommonBlocks.Tabs
+	CommTab          *commtab.CommTab
 	CurrentTabNumber int
 	RootGUI          *gocui.Gui
 }
@@ -24,7 +25,6 @@ type CliGui struct {
 func NewCliGui() (*CliGui, error) {
 	cli := new(CliGui)
 	cli.TabList = CommonBlocks.NewTabs(0, 0, "Tabs")
-
 	cli.CurrentTabNumber = 0
 
 	return cli, nil
@@ -37,7 +37,6 @@ func (gui *CliGui) ScreenInit() (err error) {
 		return err
 	}
 	defer gui.RootGUI.Close()
-
 	gui.RootGUI.Cursor = true
 	gui.RootGUI.Mouse = true
 	gui.RootGUI.Highlight = true
@@ -57,7 +56,13 @@ func (gui *CliGui) ScreenInit() (err error) {
 	// 	return err
 	// }
 
+	err = gui.setupCommTab()
+	if err != nil {
+		return err
+	}
+
 	if err := gui.RootGUI.MainLoop(); err != nil && err != gocui.ErrQuit {
+		panic(err)
 		return err
 	}
 	return
@@ -78,12 +83,7 @@ func (gui *CliGui) Layout(g *gocui.Gui) error {
 	if !gui.CheckSize(x, y) {
 		return nil
 	}
-
-	err := gui.setupCommTab(g)
-
-	if err != nil {
-		return err
-	}
+	g.Update(gui.CommTab.Layout)
 	g.Update(gui.TabList.Layout)
 	return nil
 }
@@ -92,11 +92,11 @@ func (gui *CliGui) CommTabHandler(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (gui *CliGui) setupCommTab(g *gocui.Gui) error {
+func (gui *CliGui) setupCommTab() error {
 
-	CommTab := commtab.NewCommTab(0, 3, g)
-	CommTab.Name = "CommTabContents"
-	g.Update(CommTab.Layout)
+	gui.CommTab = commtab.NewCommTab(0, 3, gui.RootGUI)
+	gui.CommTab.Name = "CommTabContents"
+
 	return nil
 }
 

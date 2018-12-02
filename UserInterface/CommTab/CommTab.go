@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-11-29 13:14:25
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-30 15:26:32
+* @Last Modified time: 2018-12-01 16:31:43
  */
 
 // Package commtab is the user interface for connecting and monitoring
@@ -38,6 +38,14 @@ type CommTab struct {
 	InfoView         string
 	x, y             int
 
+	// widgets
+	connectionInfo   *ConnectionInfo
+	sendBar          *SendBar
+	portButton       *CommonBlocks.ExplodeButton
+	baudButton       *CommonBlocks.ExplodeButton
+	connectButton    *CommonBlocks.Button
+	disconnectButton *CommonBlocks.Button
+
 	port string
 	baud int32
 
@@ -47,6 +55,13 @@ type CommTab struct {
 // NewCommTab will Create a CommTab object
 func NewCommTab(x, y int, g *gocui.Gui) *CommTab {
 	gui := new(CommTab)
+
+	var err error
+	gui.FlotillaInterface, err = FlotillaInterface.NewFlotillaInterface()
+	if err != nil {
+		panic(err)
+	}
+
 	gui.RootGUI = g
 	gui.x = x
 	gui.y = y
@@ -62,17 +77,16 @@ func NewCommTab(x, y int, g *gocui.Gui) *CommTab {
 	gui.DisconnectButton = "disconnect_button"
 	gui.InfoView = "info_view"
 
-	gui.port = ""
-	gui.baud = -1
+	err = gui.setupBlocks()
 
-	var err error
-	gui.FlotillaInterface, err = FlotillaInterface.NewFlotillaInterface()
 	if err != nil {
 		panic(err)
 	}
+	gui.port = ""
+	gui.baud = -1
 
 	if err := gui.RootGUI.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView); err != nil {
-		log.Panicln(err)
+		log.Panicln("CommTab Panicked!", err)
 	}
 	gui.readerActive = true
 	gui.CommRelay()
@@ -100,22 +114,27 @@ func (gui *CommTab) nextView(g *gocui.Gui, v *gocui.View) (err error) {
 	return err
 }
 
+func (gui *CommTab) setupBlocks() (err error) {
+	gui.Monitor = NewMonitor(gui.MonitorView, 31+gui.x, 0+gui.y)
+	gui.sendBar = NewSendBar(gui.SendView, 31+gui.x, -3, gui.writeToComm)
+	gui.connectionInfo, err = NewConnectionInfo(gui.FlotillaInterface, gui.ConnectionInfo, gui.x, gui.y, 30, 7)
+	gui.portButton = CommonBlocks.NewExplodeButton(gui.PortButton, 0+gui.x, 8+gui.y, 14, "Port Select", gui.getPorts, gui.portSelect)
+	gui.baudButton = CommonBlocks.NewExplodeButton(gui.BaudButton, 15+gui.x, 8+gui.y, 15, "Baud Select", gui.getBauds, gui.baudSelect)
+	gui.connectButton = CommonBlocks.NewButton(gui.ConnectButton, 0+gui.x, 11+gui.y, 30, "Connect", gui.connectComm)
+	gui.disconnectButton = CommonBlocks.NewButton(gui.DisconnectButton, 0+gui.x, 14+gui.y, 30, "Disconnect", gui.disconnectComm)
+	return
+}
+
 // Layout is CommTab's gocui Layout Function
 func (gui *CommTab) Layout(g *gocui.Gui) error {
-	_, maxY := g.Size()
-	gui.Monitor = NewMonitor(gui.MonitorView, 31+gui.x, 0+gui.y)
-	sendBar := NewSendBar(gui.SendView, 31+gui.x, maxY-3, gui.writeToComm)
-	gui.connectionInfoLayout(g)
-	portButton := CommonBlocks.NewExplodeButton(gui.PortButton, 0+gui.x, 8+gui.y, 14, "Port Select", gui.getPorts, gui.portSelect)
-	baudButton := CommonBlocks.NewExplodeButton(gui.BaudButton, 15+gui.x, 8+gui.y, 15, "Baud Select", gui.getBauds, gui.baudSelect)
-	connectButton := CommonBlocks.NewButton(gui.ConnectButton, 0+gui.x, 11+gui.y, 30, "Connect", gui.connectComm)
-	disconnectButton := CommonBlocks.NewButton(gui.DisconnectButton, 0+gui.x, 14+gui.y, 30, "Disconnect", gui.disconnectComm)
+	gui.RootGUI = g
 	g.Update(gui.Monitor.Layout)
-	g.Update(sendBar.Layout)
-	g.Update(portButton.Layout)
-	g.Update(baudButton.Layout)
-	g.Update(connectButton.Layout)
-	g.Update(disconnectButton.Layout)
+	g.Update(gui.sendBar.Layout)
+	g.Update(gui.connectionInfo.Layout)
+	g.Update(gui.portButton.Layout)
+	g.Update(gui.baudButton.Layout)
+	g.Update(gui.connectButton.Layout)
+	g.Update(gui.disconnectButton.Layout)
 	return nil
 }
 
@@ -168,35 +187,6 @@ func (gui *CommTab) getPorts() []string {
 func (gui *CommTab) portSelect(selection string) {
 	gui.Monitor.Write(gui.RootGUI, fmt.Sprintf("Selection %v ", selection))
 	gui.port = selection
-}
-
-func (gui *CommTab) connectionInfoLayout(g *gocui.Gui) (err error) {
-	if v, err := g.SetView(gui.ConnectionInfo, 0+gui.x, 0+gui.y, 30, 7); err != nil {
-		if err != gocui.ErrUnknownView {
-			fmt.Println(g.Size())
-			panic(err)
-		}
-		v.Title = "Connection Info"
-		status, err := gui.FlotillaInterface.CommGetStatus()
-		if err != nil {
-			fmt.Fprintln(v, err.Error())
-		}
-
-		fmt.Fprintln(v, fmt.Sprintf("Port: %v\nBaud: %v\nConnected: %v", status.Port, status.Baud, status.Connected))
-		updateStatus := func(msg *nats.Msg) {
-			newStatus, err := gui.FlotillaInterface.DeconstructStatus(msg.Data)
-			if err != nil {
-				fmt.Fprintln(v, err.Error())
-			}
-			v.Clear()
-			v.SetCursor(v.Origin())
-			fmt.Fprintln(v, fmt.Sprintf("Port: %v\nBaud: %v\nConnected: %v", newStatus.Port, newStatus.Baud, newStatus.Connected))
-		}
-
-		gui.FlotillaInterface.NC.Subscribe("comFlotillaInterface.status_update", updateStatus)
-	}
-
-	return nil
 }
 
 // CommRelay will subscribes functions to incoming data from Nats
