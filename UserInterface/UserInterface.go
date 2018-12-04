@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-02 15:27:31
+* @Last Modified time: 2018-12-04 15:37:12
  */
 
 package UserInterface
@@ -39,24 +39,21 @@ func (gui *CliGui) ScreenInit() (err error) {
 		return err
 	}
 	defer gui.RootGUI.Close()
+
+	// Set GUI options
 	gui.RootGUI.Cursor = true
 	gui.RootGUI.Mouse = true
 	gui.RootGUI.Highlight = true
 	gui.RootGUI.SelFgColor = gocui.ColorGreen
+	if err := gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
+		return err
+	}
 
 	// Make Tabs
 	gui.TabList.AddTab("CommTab", "Comm")
 	gui.TabList.AddTab("FileTab", "Files")
 
 	gui.RootGUI.SetManagerFunc(gui.Layout)
-
-	if err := gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
-		return err
-	}
-
-	// if err := gui.RootGUI.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView); err != nil {
-	// 	return err
-	// }
 
 	err = gui.setupCommTab()
 	err = gui.setupFileTab()
@@ -72,17 +69,13 @@ func (gui *CliGui) ScreenInit() (err error) {
 
 }
 
+// UpdateTab will set the currently selected tab, then it will reset the manager func which will
+// get rid of all views and keybindings.
 func (gui *CliGui) UpdateTab(name string) {
 	gui.CurrentTabName = name
 
-	// Delete all views that are not apart of the currently slected tab
-	for _, view := range gui.RootGUI.Views() {
-		name = view.Name()
-		if name != "CommTab" && name != "FileTab" && name != "Tabs" {
-			gui.RootGUI.DeleteKeybindings(name)
-			gui.RootGUI.DeleteView(name)
-		}
-	}
+	// Reset Gui for new tab
+	gui.RootGUI.SetManagerFunc(gui.Layout)
 
 }
 
@@ -96,19 +89,38 @@ func (gui *CliGui) CheckSize(x, y int) bool {
 
 // Layout is a function for Gocui to help layout the screen
 func (gui *CliGui) Layout(g *gocui.Gui) error {
-	x, y := g.Size()
-	if !gui.CheckSize(x, y) {
-		return nil
-	}
+	// x, y := g.Size()
+	// if !gui.CheckSize(x, y) {
+	// 	return nil
+	// }
 
-	g.Update(gui.TabList.Layout)
+	//g.Update(gui.TabList.Layout)
+
+	var managers []func(*gocui.Gui) error
+
+	// Add the tab to every view
+	managers = append(managers, gui.TabList.Layout)
 
 	//Update Tab based on Selected Tab
 	switch gui.CurrentTabName {
 	case "CommTab":
-		g.Update(gui.CommTab.Layout)
+		managers = append(managers, gui.CommTab.Layout)
 	case "FileTab":
-		g.Update(gui.FileTab.Layout)
+		managers = append(managers, gui.FileTab.Layout)
+	}
+
+	// Update all layouts
+	for _, layout := range managers {
+		g.Update(layout)
+	}
+
+	// reset root gui options and bindings
+	g.Cursor = true
+	g.Mouse = true
+	g.Highlight = true
+	g.SelFgColor = gocui.ColorGreen
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
+		return err
 	}
 
 	return nil

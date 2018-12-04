@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-11-29 13:14:25
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-01 16:31:43
+* @Last Modified time: 2018-12-04 15:42:10
  */
 
 // Package commtab is the user interface for connecting and monitoring
@@ -85,9 +85,6 @@ func NewCommTab(x, y int, g *gocui.Gui) *CommTab {
 	gui.port = ""
 	gui.baud = -1
 
-	if err := gui.RootGUI.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView); err != nil {
-		log.Panicln("CommTab Panicked!", err)
-	}
 	gui.readerActive = true
 	gui.CommRelay()
 
@@ -135,6 +132,12 @@ func (gui *CommTab) Layout(g *gocui.Gui) error {
 	g.Update(gui.baudButton.Layout)
 	g.Update(gui.connectButton.Layout)
 	g.Update(gui.disconnectButton.Layout)
+
+	// Update keybindings
+	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView); err != nil {
+		log.Panicln("CommTab Panicked!", err)
+	}
+
 	return nil
 }
 
