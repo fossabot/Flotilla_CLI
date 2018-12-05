@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 16:56:20
+* @Last Modified time: 2018-12-04 17:05:28
  */
 
 package UserInterface
@@ -90,12 +90,10 @@ func (gui *CliGui) CheckSize(x, y int) bool {
 
 // Layout is a function for Gocui to help layout the screen
 func (gui *CliGui) Layout(g *gocui.Gui) error {
-	// x, y := g.Size()
+	x, y := g.Size()
 	// if !gui.CheckSize(x, y) {
 	// 	return nil
 	// }
-
-	//g.Update(gui.TabList.Layout)
 
 	var managers []func(*gocui.Gui) error
 
@@ -116,12 +114,20 @@ func (gui *CliGui) Layout(g *gocui.Gui) error {
 	}
 
 	// reset root gui options and bindings
-	g.Cursor = true
-	g.Mouse = true
-	g.Highlight = true
-	g.SelFgColor = gocui.ColorGreen
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
-		return err
+	_, err := g.SetView("FlotillaUI", x+1, y+1, x+2, y+2)
+
+	if err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		g.Cursor = true
+		g.Mouse = true
+		g.Highlight = true
+		g.SelFgColor = gocui.ColorGreen
+		if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
