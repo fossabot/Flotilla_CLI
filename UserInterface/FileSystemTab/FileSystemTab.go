@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-12-02 13:26:45
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 16:55:23
+* @Last Modified time: 2018-12-04 17:26:39
  */
 
 package FileSystemTab
@@ -14,13 +14,16 @@ import (
 
 const (
 	// FileView : Name for the File View
-	FileView = "FileView"
+	FileViewName = "FileView"
+
+	// FileInfo : Name for the File Info View
+	FileInfoName = "FileInfo"
 
 	// SelectButton : Name of the button to select files
-	SelectButton = "SelectButton"
+	SelectButtonName = "SelectButton"
 
 	// PathBar : Name for the view in charge of the current path
-	PathBar = "PathBar"
+	PathBarName = "PathBar"
 )
 
 // FileSystemTab is an object for displaying the FileSystem
