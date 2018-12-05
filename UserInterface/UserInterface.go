@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 15:37:12
+* @Last Modified time: 2018-12-04 15:57:50
  */
 
 package UserInterface
@@ -45,7 +45,8 @@ func (gui *CliGui) ScreenInit() (err error) {
 	gui.RootGUI.Mouse = true
 	gui.RootGUI.Highlight = true
 	gui.RootGUI.SelFgColor = gocui.ColorGreen
-	if err := gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit); err != nil {
+	err = gui.RootGUI.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, gui.quit)
+	if err != nil {
 		return err
 	}
 
@@ -101,7 +102,7 @@ func (gui *CliGui) Layout(g *gocui.Gui) error {
 	// Add the tab to every view
 	managers = append(managers, gui.TabList.Layout)
 
-	//Update Tab based on Selected Tab
+	//Update TabContents based on Selected Tab
 	switch gui.CurrentTabName {
 	case "CommTab":
 		managers = append(managers, gui.CommTab.Layout)

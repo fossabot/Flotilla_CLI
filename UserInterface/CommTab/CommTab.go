@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-11-29 13:14:25
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 15:42:10
+* @Last Modified time: 2018-12-04 16:26:48
  */
 
 // Package commtab is the user interface for connecting and monitoring
@@ -11,7 +11,6 @@ package commtab
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -21,22 +20,40 @@ import (
 	"github.com/ximidar/gocui"
 )
 
+const (
+	// ConnectionView Name for connection info view
+	ConnectionView = "connection_info"
+
+	// MonitorView Name for monitor view
+	MonitorView = "monitor_view"
+
+	// SendView Name for send view
+	SendView = "send_view"
+
+	// BaudButton Name for Baud Button view
+	BaudButton = "baud_button"
+
+	// PortButton Name for Port Button View
+	PortButton = "port_button"
+
+	// ConnectButton Name for Connect Button view
+	ConnectButton = "connect_button"
+
+	// DisconnectButton Name for Disconnect Button View
+	DisconnectButton = "disconnect_button"
+
+	// InfoView Name for info view
+	InfoView = "info_view"
+)
+
 // CommTab Creates a Command Line GUI
 type CommTab struct {
 	readerActive bool
 	RootGUI      *gocui.Gui
 	Name         string
 
-	ConnectionInfo   string
-	MonitorView      string
-	Monitor          MonitorInterface
-	SendView         string
-	BaudButton       string
-	PortButton       string
-	ConnectButton    string
-	DisconnectButton string
-	InfoView         string
-	x, y             int
+	Monitor MonitorInterface
+	x, y    int
 
 	// widgets
 	connectionInfo   *ConnectionInfo
@@ -45,6 +62,8 @@ type CommTab struct {
 	baudButton       *CommonBlocks.ExplodeButton
 	connectButton    *CommonBlocks.Button
 	disconnectButton *CommonBlocks.Button
+	CycleViews       []string
+	SelectedView     int
 
 	port string
 	baud int32
@@ -56,6 +75,10 @@ type CommTab struct {
 func NewCommTab(x, y int, g *gocui.Gui) *CommTab {
 	gui := new(CommTab)
 
+	// CycleViews is an array of strings to cycle the selected view
+	gui.CycleViews = append(gui.CycleViews, SendView, PortButton, BaudButton, ConnectButton, DisconnectButton)
+	gui.SelectedView = 99 // Select the send bar
+
 	var err error
 	gui.FlotillaInterface, err = FlotillaInterface.NewFlotillaInterface()
 	if err != nil {
@@ -66,16 +89,6 @@ func NewCommTab(x, y int, g *gocui.Gui) *CommTab {
 	gui.x = x
 	gui.y = y
 	gui.readerActive = false
-
-	// names
-	gui.ConnectionInfo = "connection_info"
-	gui.MonitorView = "monitor_view"
-	gui.SendView = "send_view"
-	gui.BaudButton = "baud_button"
-	gui.PortButton = "port_button"
-	gui.ConnectButton = "connect_button"
-	gui.DisconnectButton = "disconnect_button"
-	gui.InfoView = "info_view"
 
 	err = gui.setupBlocks()
 
@@ -105,20 +118,25 @@ func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
 
 func (gui *CommTab) nextView(g *gocui.Gui, v *gocui.View) (err error) {
 
-	_, err = setCurrentViewOnTop(g, gui.SendView)
+	gui.SelectedView++
+
+	if gui.SelectedView >= len(gui.CycleViews) {
+		gui.SelectedView = 0
+	}
+	_, err = setCurrentViewOnTop(g, gui.CycleViews[gui.SelectedView])
 	g.Cursor = true
 
 	return err
 }
 
 func (gui *CommTab) setupBlocks() (err error) {
-	gui.Monitor = NewMonitor(gui.MonitorView, 31+gui.x, 0+gui.y)
-	gui.sendBar = NewSendBar(gui.SendView, 31+gui.x, -3, gui.writeToComm)
-	gui.connectionInfo, err = NewConnectionInfo(gui.FlotillaInterface, gui.ConnectionInfo, gui.x, gui.y, 30, 7)
-	gui.portButton = CommonBlocks.NewExplodeButton(gui.PortButton, 0+gui.x, 8+gui.y, 14, "Port Select", gui.getPorts, gui.portSelect)
-	gui.baudButton = CommonBlocks.NewExplodeButton(gui.BaudButton, 15+gui.x, 8+gui.y, 15, "Baud Select", gui.getBauds, gui.baudSelect)
-	gui.connectButton = CommonBlocks.NewButton(gui.ConnectButton, 0+gui.x, 11+gui.y, 30, "Connect", gui.connectComm)
-	gui.disconnectButton = CommonBlocks.NewButton(gui.DisconnectButton, 0+gui.x, 14+gui.y, 30, "Disconnect", gui.disconnectComm)
+	gui.Monitor = NewMonitor(MonitorView, 31+gui.x, 0+gui.y)
+	gui.sendBar = NewSendBar(SendView, 31+gui.x, -3, gui.writeToComm)
+	gui.connectionInfo, err = NewConnectionInfo(gui.FlotillaInterface, ConnectionView, gui.x, gui.y, 30, 7)
+	gui.portButton = CommonBlocks.NewExplodeButton(PortButton, 0+gui.x, 8+gui.y, 14, "Port Select", gui.getPorts, gui.portSelect)
+	gui.baudButton = CommonBlocks.NewExplodeButton(BaudButton, 15+gui.x, 8+gui.y, 15, "Baud Select", gui.getBauds, gui.baudSelect)
+	gui.connectButton = CommonBlocks.NewButton(ConnectButton, 0+gui.x, 11+gui.y, 30, "Connect", gui.connectComm)
+	gui.disconnectButton = CommonBlocks.NewButton(DisconnectButton, 0+gui.x, 14+gui.y, 30, "Disconnect", gui.disconnectComm)
 	return
 }
 
@@ -134,8 +152,17 @@ func (gui *CommTab) Layout(g *gocui.Gui) error {
 	g.Update(gui.disconnectButton.Layout)
 
 	// Update keybindings
-	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView); err != nil {
-		log.Panicln("CommTab Panicked!", err)
+	maxX, MaxY := g.Size()
+	_, err := g.SetView(gui.Name, maxX+1, MaxY+1, maxX+2, MaxY+2)
+	if err != nil {
+		if err != gocui.ErrUnknownView {
+			fmt.Println(err)
+			return err
+		}
+		err = g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, gui.nextView)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

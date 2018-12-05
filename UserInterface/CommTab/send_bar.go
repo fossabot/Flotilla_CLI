@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 21:59:56
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 15:40:35
+* @Last Modified time: 2018-12-04 16:19:46
  */
 package commtab
 
@@ -36,13 +36,14 @@ func (w *SendBar) Layout(g *gocui.Gui) error {
 			fmt.Println(err)
 			return err
 		}
+		v.Title = "Send"
+		v.Editable = true
+		err = g.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.sendViewClear)
+		if err != nil {
+			return err
+		}
 	}
-	v.Title = "Send"
-	v.Editable = true
-	err = g.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.sendViewClear)
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 
