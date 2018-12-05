@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-06-16 16:39:58
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 15:57:50
+* @Last Modified time: 2018-12-04 16:56:20
  */
 
 package UserInterface
@@ -127,7 +127,7 @@ func (gui *CliGui) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-// CommTabHandlder will controll pulling up the CommTab Contents.
+// CommTabHandler will controll pulling up the CommTab Contents.
 func (gui *CliGui) CommTabHandler(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
@@ -142,7 +142,7 @@ func (gui *CliGui) setupCommTab() error {
 
 func (gui *CliGui) setupFileTab() error {
 	var err error
-	gui.FileTab, err = FileSystemTab.NewFileSystemTab("FileContents", 0, 0, 30, 2)
+	gui.FileTab, err = FileSystemTab.NewFileSystemTab("FileContents", 0, 3)
 	return err
 }
 

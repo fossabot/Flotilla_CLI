@@ -2,34 +2,41 @@
 * @Author: Ximidar
 * @Date:   2018-12-02 13:26:45
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-02 15:18:31
+* @Last Modified time: 2018-12-04 16:55:23
  */
 
 package FileSystemTab
 
 import (
-	"fmt"
-
 	"github.com/ximidar/Flotilla/Flotilla_CLI/FlotillaInterface"
 	"github.com/ximidar/gocui"
 )
 
+const (
+	// FileView : Name for the File View
+	FileView = "FileView"
+
+	// SelectButton : Name of the button to select files
+	SelectButton = "SelectButton"
+
+	// PathBar : Name for the view in charge of the current path
+	PathBar = "PathBar"
+)
+
 // FileSystemTab is an object for displaying the FileSystem
 type FileSystemTab struct {
-	X, Y, W, H int
-	Name       string
-	FI         *FlotillaInterface.FlotillaInterface
+	X, Y int
+	Name string
+	FI   *FlotillaInterface.FlotillaInterface
 }
 
 // NewFileSystemTab will construct a new Filesystem object
-func NewFileSystemTab(name string, x int, y int, w int, h int) (*FileSystemTab, error) {
+func NewFileSystemTab(name string, x int, y int) (*FileSystemTab, error) {
 
 	fs := new(FileSystemTab)
 	fs.Name = name
 	fs.X = x
 	fs.Y = y
-	fs.W = w
-	fs.H = h
 
 	return fs, nil
 
@@ -39,21 +46,14 @@ func NewFileSystemTab(name string, x int, y int, w int, h int) (*FileSystemTab, 
 func (fs *FileSystemTab) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
-	middleX := maxX / 2
-	middleY := maxY / 2
-
-	Message := "New Tab!"
-
-	v, err := g.SetView(fs.Name, middleX, middleY, middleX+fs.W, middleY+fs.H)
+	_, err := g.SetView(fs.Name, maxX+1, maxY+1, maxX+2, maxY+2)
 
 	if err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-
+		// Update keybindings
 	}
-	fmt.Fprintln(v, Message)
-	g.SetViewOnTop(v.Name())
 
 	return nil
 }

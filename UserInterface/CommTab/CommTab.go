@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-11-29 13:14:25
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 16:26:48
+* @Last Modified time: 2018-12-04 16:42:44
  */
 
 // Package commtab is the user interface for connecting and monitoring
@@ -77,7 +77,7 @@ func NewCommTab(x, y int, g *gocui.Gui) *CommTab {
 
 	// CycleViews is an array of strings to cycle the selected view
 	gui.CycleViews = append(gui.CycleViews, SendView, PortButton, BaudButton, ConnectButton, DisconnectButton)
-	gui.SelectedView = 99 // Select the send bar
+	gui.SelectedView = 9999 // Select the send bar
 
 	var err error
 	gui.FlotillaInterface, err = FlotillaInterface.NewFlotillaInterface()
@@ -169,7 +169,6 @@ func (gui *CommTab) Layout(g *gocui.Gui) error {
 }
 
 func (gui *CommTab) writeToComm(mess string) {
-	//gui.Monitor.Write(gui.RootGUI, mess)
 	gui.FlotillaInterface.CommWrite(mess)
 }
 
