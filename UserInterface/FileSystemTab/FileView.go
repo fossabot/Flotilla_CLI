@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-12-04 17:25:32
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-05 15:25:10
+* @Last Modified time: 2018-12-05 15:57:23
  */
 
 package FileSystemTab
@@ -68,6 +68,9 @@ func (fv *FileView) Layout(g *gocui.Gui) error {
 		v.Highlight = true
 		v.SelBgColor = gocui.ColorGreen
 		v.SelFgColor = gocui.ColorBlack
+		if _, err := g.SetCurrentView(v.Name()); err != nil {
+			return err
+		}
 	}
 
 	return fv.UpdateFileList(g, v)
