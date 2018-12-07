@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-12-02 13:26:45
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-06 09:22:38
+* @Last Modified time: 2018-12-07 15:35:24
  */
 
 package FileSystemTab
@@ -36,10 +36,10 @@ type FileSystemTab struct {
 
 	// Views
 	FileView FileViewInterface
+	FileInfo *FileInfo
 
 	// File Manipulation
-	CurrentlySelectedFile *Files.File
-	CurrentDirectory      *FolderNode
+	CurrentDirectory *FolderNode
 }
 
 // NewFileSystemTab will construct a new Filesystem object
@@ -66,6 +66,10 @@ func NewFileSystemTab(name string, x int, y int) (*FileSystemTab, error) {
 	fs.FileView = NewFileView(FileViewName, fs.X, fs.Y, fs.SelectFile)
 	fs.UpdateFileList()
 
+	// Set up FileInfo
+	fs.FileInfo = NewFileInfo(fs.Y, FileInfoName)
+	fs.FileInfo.RootFilePath = fs.Structure["root"].Path
+
 	return fs, nil
 
 }
@@ -83,6 +87,7 @@ func (fs *FileSystemTab) Layout(g *gocui.Gui) error {
 		// Update keybindings
 	}
 	g.Update(fs.FileView.Layout)
+	g.Update(fs.FileInfo.Layout)
 
 	return nil
 }
@@ -117,7 +122,7 @@ func (fs *FileSystemTab) SelectFile(file string) {
 		return
 	}
 
-	fs.CurrentlySelectedFile = fileInfo
+	fs.FileInfo.DeliverFile(fileInfo)
 }
 
 // initNode will apply the structure to the folder node and instantiate the root folder

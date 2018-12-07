@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-12-04 17:25:32
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-05 15:57:23
+* @Last Modified time: 2018-12-06 15:26:25
  */
 
 package FileSystemTab
@@ -122,8 +122,11 @@ func (fv *FileView) CallSelectFile(g *gocui.Gui, v *gocui.View) error {
 	_, cy := v.Cursor()
 	l, err := v.Line(cy)
 	if err != nil {
+		if err.Error() != "invalid point" {
+			return err
+		}
 		l = ""
-		return err
+		return nil
 	}
 	fv.SelectFile(l)
 	return nil
