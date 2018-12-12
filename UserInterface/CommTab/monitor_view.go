@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 22:00:52
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-29 13:22:37
+* @Last Modified time: 2018-12-11 18:51:05
  */
 
 package commtab
@@ -61,7 +61,11 @@ func (w *Monitor) Write(g *gocui.Gui, mess string) {
 	g.Update(func(g *gocui.Gui) error {
 		v, err := g.View(w.name)
 		if err != nil {
-			return err
+			if err != gocui.ErrUnknownView {
+				return err
+			}
+			// if the view is unkown dont write to it. TODO add unkown writes to buffer
+			return nil
 		}
 		fmt.Fprintln(v, StringCleaner(mess))
 		return err

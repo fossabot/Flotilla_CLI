@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 22:00:30
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-01 15:16:51
+* @Last Modified time: 2018-12-11 18:47:12
  */
 package commtab
 
@@ -42,7 +42,7 @@ func NewConnectionInfo(FI *FlotillaInterface.FlotillaInterface, name string, x i
 
 // SetupNatsSubs will setup the subscribtions that Connection info will be connected to
 func (ci *ConnectionInfo) SetupNatsSubs() error {
-	_, err := ci.FI.NC.Subscribe("comFlotillaInterface.status_update", ci.UpdateStatus)
+	_, err := ci.FI.NC.Subscribe(CS.StatusUpdate, ci.UpdateStatus)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-11-29 13:14:25
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 16:42:44
+* @Last Modified time: 2018-12-11 18:46:40
  */
 
 // Package commtab is the user interface for connecting and monitoring
@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/nats-io/go-nats"
+	CS "github.com/ximidar/Flotilla/DataStructures/CommStructures"
 	"github.com/ximidar/Flotilla/Flotilla_CLI/FlotillaInterface"
 	"github.com/ximidar/Flotilla/Flotilla_CLI/UserInterface/CommonBlocks"
 	"github.com/ximidar/gocui"
@@ -221,8 +222,15 @@ func (gui *CommTab) portSelect(selection string) {
 // CommRelay will subscribes functions to incoming data from Nats
 func (gui *CommTab) CommRelay() {
 
-	gui.FlotillaInterface.NC.Subscribe("comFlotillaInterface.read_line", gui.CommReadSub)
-	gui.FlotillaInterface.NC.Subscribe("comFlotillaInterface.write_line", gui.CommWriteSub)
+	_, err := gui.FlotillaInterface.NC.Subscribe(CS.ReadLine, gui.CommReadSub)
+	if err != nil {
+		panic(err)
+	}
+	_, err = gui.FlotillaInterface.NC.Subscribe(CS.WriteLine, gui.CommWriteSub)
+
+	if err != nil {
+		panic(err)
+	}
 
 }
 
