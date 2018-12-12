@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-12-04 15:47:49
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-11 16:04:48
+* @Last Modified time: 2018-12-11 16:06:57
  */
 
 package CommonBlocks
@@ -82,6 +82,7 @@ func (fs *Label) Layout(g *gocui.Gui) error {
 	return nil
 }
 
+// Destroy will destroy the view and the keybindings
 func (fs *Label) Destroy(g *gocui.Gui, v *gocui.View) error {
 	g.DeleteView(fs.Name)
 	g.DeleteKeybindings(fs.Name)

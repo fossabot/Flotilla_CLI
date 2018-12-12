@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-11 15:27:59
+* @Last Modified time: 2018-12-11 16:45:39
  */
 
 package FlotillaInterface
@@ -307,6 +307,82 @@ func (fi *FlotillaInterface) ExtractDataJSON(rawData []byte) ([]byte, error) {
 }
 
 // SelectAndPlayFile will select a file over Nats and play it.
-func (fi *FlotillaInterface) SelectAndPlayFile(file *Files.File) {
+func (fi *FlotillaInterface) SelectAndPlayFile(file *Files.File) error {
+	err := fi.selectFile(file)
+	if err != nil {
+		return err
+	}
 
+	err = fi.streamFile()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fi *FlotillaInterface) selectFile(file *Files.File) error {
+	selectAction, err := FS.NewFileAction(FS.SelectFile, file.Path)
+	if err != nil {
+		return err
+	}
+
+	reply, err := selectAction.SendAction(fi.NC, 5*time.Second)
+	if err != nil {
+		return err
+	}
+
+	rJSON, err := fi.returnReplyJSON(reply)
+	if err != nil {
+		return err
+	}
+	if rJSON.Success {
+		return nil
+	}
+	return errors.New(string(rJSON.Message))
+}
+
+func (fi *FlotillaInterface) streamFile() error {
+	streamAction, err := FS.NewFileAction(FS.StreamFile, "")
+	if err != nil {
+		return err
+	}
+
+	reply, err := streamAction.SendAction(fi.NC, 5*time.Second)
+	if err != nil {
+		return err
+	}
+
+	rString, err := fi.returnReplyString(reply)
+	if err != nil {
+		return err
+	}
+	if rString.Success {
+		return nil
+	}
+	return errors.New(string(rString.Message))
+
+}
+
+func (fi *FlotillaInterface) returnReplyJSON(msg *nats.Msg) (*DS.ReplyJSON, error) {
+	msgdata := DS.ReplyJSON{}
+
+	// unmarshal msg data
+	err := json.Unmarshal(msg.Data, &msgdata)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msgdata, nil
+}
+
+func (fi *FlotillaInterface) returnReplyString(msg *nats.Msg) (*DS.ReplyString, error) {
+	msgdata := DS.ReplyString{}
+
+	// unmarshal msg data
+	err := json.Unmarshal(msg.Data, &msgdata)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msgdata, nil
 }

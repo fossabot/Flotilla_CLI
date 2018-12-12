@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-12-02 13:26:45
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-11 15:32:02
+* @Last Modified time: 2018-12-11 16:48:15
  */
 
 package FileSystemTab
@@ -111,7 +111,13 @@ func (fs *FileSystemTab) Layout(g *gocui.Gui) error {
 // SelectAndPlay will select the current file and start playing it
 func (fs *FileSystemTab) SelectAndPlay(g *gocui.Gui, v *gocui.View) error {
 	file := fs.FileInfo.CurrentFile
-	fs.FI.SelectAndPlayFile(file)
+	err := fs.FI.SelectAndPlayFile(file)
+	if err != nil {
+		mess := fmt.Sprintf("Cannot Play: %v", err.Error())
+		label := CommonBlocks.NewLabel("PlayFileMessage", mess, 10, 10, len(mess)+2, 2)
+		g.Update(label.Layout)
+		return nil
+	}
 	mess := fmt.Sprintf("Playing File: %v", file.Name)
 	label := CommonBlocks.NewLabel("PlayFileMessage", mess, 10, 10, len(mess)+2, 2)
 	g.Update(label.Layout)
