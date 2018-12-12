@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-12-04 17:25:32
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-06 15:26:25
+* @Last Modified time: 2018-12-11 15:53:58
  */
 
 package FileSystemTab
@@ -107,6 +107,11 @@ func (fv *FileView) HighlightFile(g *gocui.Gui, v *gocui.View) error {
 	//send selected item
 	err := v.SetCursor(v.Cursor())
 
+	if err != nil {
+		return err
+	}
+
+	_, err = g.SetCurrentView(fv.Name)
 	if err != nil {
 		return err
 	}

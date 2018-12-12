@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 10:12:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-01 14:49:41
+* @Last Modified time: 2018-12-11 15:27:59
  */
 
 package FlotillaInterface
@@ -304,4 +304,9 @@ func (fi *FlotillaInterface) ExtractDataJSON(rawData []byte) ([]byte, error) {
 	}
 
 	return nil, errors.New("JSON Call failed")
+}
+
+// SelectAndPlayFile will select a file over Nats and play it.
+func (fi *FlotillaInterface) SelectAndPlayFile(file *Files.File) {
+
 }

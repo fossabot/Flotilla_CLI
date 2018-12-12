@@ -2,13 +2,16 @@
 * @Author: Ximidar
 * @Date:   2018-12-02 13:26:45
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-07 15:35:24
+* @Last Modified time: 2018-12-11 15:32:02
  */
 
 package FileSystemTab
 
 import (
+	"fmt"
+
 	"github.com/ximidar/Flotilla/Flotilla_CLI/FlotillaInterface"
+	"github.com/ximidar/Flotilla/Flotilla_CLI/UserInterface/CommonBlocks"
 	"github.com/ximidar/Flotilla/Flotilla_File_Manager/Files"
 	"github.com/ximidar/gocui"
 )
@@ -35,8 +38,9 @@ type FileSystemTab struct {
 	Structure map[string]*Files.File
 
 	// Views
-	FileView FileViewInterface
-	FileInfo *FileInfo
+	FileView     FileViewInterface
+	FileInfo     *FileInfo
+	SelectButton *CommonBlocks.Button
 
 	// File Manipulation
 	CurrentDirectory *FolderNode
@@ -67,8 +71,11 @@ func NewFileSystemTab(name string, x int, y int) (*FileSystemTab, error) {
 	fs.UpdateFileList()
 
 	// Set up FileInfo
-	fs.FileInfo = NewFileInfo(fs.Y, FileInfoName)
+	fs.FileInfo = NewFileInfo(fs.Y+3, FileInfoName)
 	fs.FileInfo.RootFilePath = fs.Structure["root"].Path
+
+	// Set up SelectButton
+	fs.SelectButton = CommonBlocks.NewButton(SelectButtonName, fs.FileInfo.X+1, fs.FileInfo.Y, 30, "Select and Play", fs.SelectAndPlay)
 
 	return fs, nil
 
@@ -88,7 +95,26 @@ func (fs *FileSystemTab) Layout(g *gocui.Gui) error {
 	}
 	g.Update(fs.FileView.Layout)
 	g.Update(fs.FileInfo.Layout)
+	if fs.FileInfo.CurrentFile == nil {
+		fs.SelectButton.Selectable = false
+		fs.SelectButton.Update = true
+	} else {
+		fs.SelectButton.Selectable = true
+		fs.SelectButton.Update = true
+	}
+	fs.SelectButton.UpdateSize(fs.FileInfo.X, fs.Y, 30)
+	g.Update(fs.SelectButton.Layout)
 
+	return nil
+}
+
+// SelectAndPlay will select the current file and start playing it
+func (fs *FileSystemTab) SelectAndPlay(g *gocui.Gui, v *gocui.View) error {
+	file := fs.FileInfo.CurrentFile
+	fs.FI.SelectAndPlayFile(file)
+	mess := fmt.Sprintf("Playing File: %v", file.Name)
+	label := CommonBlocks.NewLabel("PlayFileMessage", mess, 10, 10, len(mess)+2, 2)
+	g.Update(label.Layout)
 	return nil
 }
 

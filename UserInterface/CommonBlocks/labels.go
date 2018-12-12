@@ -2,13 +2,14 @@
 * @Author: Ximidar
 * @Date:   2018-12-04 15:47:49
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-04 15:52:16
+* @Last Modified time: 2018-12-11 16:04:48
  */
 
 package CommonBlocks
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ximidar/Flotilla/Flotilla_CLI/FlotillaInterface"
 	"github.com/ximidar/gocui"
@@ -23,7 +24,7 @@ type Label struct {
 }
 
 // NewLabel will construct a new Filesystem object
-func NewLabel(name string, message string, x int, y int, w int, h int) (*Label, error) {
+func NewLabel(name string, message string, x int, y int, w int, h int) *Label {
 
 	fs := new(Label)
 	fs.Name = name
@@ -33,7 +34,7 @@ func NewLabel(name string, message string, x int, y int, w int, h int) (*Label, 
 	fs.W = w
 	fs.H = h
 
-	return fs, nil
+	return fs
 
 }
 
@@ -41,7 +42,7 @@ func NewLabel(name string, message string, x int, y int, w int, h int) (*Label, 
 func (fs *Label) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
-	middleX := maxX / 2
+	middleX := (maxX / 2) - (len(fs.Message) / 2)
 	middleY := maxY / 2
 
 	v, err := g.SetView(fs.Name, middleX, middleY, middleX+fs.W, middleY+fs.H)
@@ -50,10 +51,39 @@ func (fs *Label) Layout(g *gocui.Gui) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
+		if err := g.SetKeybinding(v.Name(), gocui.MouseLeft, gocui.ModNone, fs.Destroy); err != nil {
+			return err
+		}
+		if err := g.SetKeybinding(v.Name(), gocui.KeyEnter, gocui.ModNone, fs.Destroy); err != nil {
+			return err
+		}
+		fmt.Fprintln(v, fs.Message)
+		g.SetViewOnTop(v.Name())
+		g.SetCurrentView(v.Name())
 
+		// Check for focus will check if this view is focused on or not.
+		// If it is not focused on then it will be destroyed
+		checkFocusFunc := func() {
+			for {
+				select {
+				case <-time.After(200 * time.Millisecond):
+
+				}
+
+				if g.CurrentView() != v {
+					fs.Destroy(g, v)
+					return
+				}
+			}
+		}
+		go checkFocusFunc()
 	}
-	fmt.Fprintln(v, fs.Message)
-	g.SetViewOnTop(v.Name())
 
+	return nil
+}
+
+func (fs *Label) Destroy(g *gocui.Gui, v *gocui.View) error {
+	g.DeleteView(fs.Name)
+	g.DeleteKeybindings(fs.Name)
 	return nil
 }

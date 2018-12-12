@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 21:58:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-11-29 13:26:06
+* @Last Modified time: 2018-12-11 15:21:09
  */
 
 package CommonBlocks
@@ -16,21 +16,24 @@ import (
 
 // Button is a object to create a button
 type Button struct {
-	name    string
-	x, y    int
-	w       int
-	label   string
-	handler func(g *gocui.Gui, v *gocui.View) error
+	name       string
+	x, y       int
+	w          int
+	label      string
+	Selectable bool
+	Update     bool
+	handler    func(g *gocui.Gui, v *gocui.View) error
 }
 
 // NewButton will connstruct a Button
 func NewButton(name string, x, y, w int, label string, handler func(g *gocui.Gui, v *gocui.View) error) *Button {
 	return &Button{name: name,
-		x:       x,
-		y:       y,
-		w:       w,
-		label:   label,
-		handler: handler,
+		x:          x,
+		y:          y,
+		w:          w,
+		label:      label,
+		handler:    handler,
+		Selectable: true,
 	}
 }
 
@@ -40,25 +43,69 @@ func (b *Button) Layout(g *gocui.Gui) error {
 	if err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
+
 		}
-		if err := g.SetKeybinding(b.name, gocui.KeyEnter, gocui.ModNone, b.handler); err != nil {
+		if err := g.SetKeybinding(b.name, gocui.KeyEnter, gocui.ModNone, b.clickButton); err != nil {
 			return err
 		}
-		if err := g.SetKeybinding(b.name, gocui.MouseLeft, gocui.ModNone, b.handler); err != nil {
+		if err := g.SetKeybinding(b.name, gocui.MouseLeft, gocui.ModNone, b.clickButton); err != nil {
 			return err
 		}
 		if err := b.centerLabel(v); err != nil {
 			return err
 		}
 	}
+
+	if b.Update {
+		if err := b.centerLabel(v); err != nil {
+			return err
+		}
+		b.Update = false
+	}
+
+	if !b.Selectable {
+		v.FgColor = gocui.ColorBlack
+		v.BgColor = gocui.ColorBlack
+	} else {
+		v.FgColor = gocui.ColorDefault
+		v.BgColor = gocui.ColorDefault
+	}
 	return nil
+}
+
+// UpdateSize will update the button's size
+func (b *Button) UpdateSize(x, y, w int) {
+	if x == b.x && y == b.y && w == b.w {
+		return
+	}
+	b.x = x
+	b.y = y
+	b.w = w
+	b.Update = true
+
+}
+
+func (b *Button) clickButton(g *gocui.Gui, v *gocui.View) error {
+	if b.Selectable {
+		return b.handler(g, v)
+	}
+	return nil
+}
+
+func (b *Button) fitText(text string, v *gocui.View) string {
+	maxX, _ := v.Size()
+	if len(text) > maxX {
+		length := maxX - 4
+		startmess := len(text) - length
+		mess := "..." + text[startmess:]
+		return mess
+	}
+	return text
 }
 
 func (b *Button) centerLabel(v *gocui.View) error {
 	w, _ := v.Size()
-	if len(b.label) > w {
-		return errors.New("label is bigger than the button")
-	}
+	b.label = b.fitText(b.label, v)
 
 	offsetSize := (w - len(b.label)) / 2
 	spaceOffset := ""
@@ -69,13 +116,18 @@ func (b *Button) centerLabel(v *gocui.View) error {
 	return nil
 }
 
+/////////////////////////////////////////////////////////////////////
+// Explode Button
+/////////////////////////////////////////////////////////////////////
+
 // ExplodeButton will create a Button that will have a selector that appears
 // in the middle of the screen
 type ExplodeButton struct {
-	name           string
-	x, y           int
-	w              int
-	label          string
+	name  string
+	x, y  int
+	w     int
+	label string
+
 	getBody        func() []string
 	selectCallback func(selection string)
 }
@@ -109,6 +161,7 @@ func (b *ExplodeButton) Layout(g *gocui.Gui) error {
 			return err
 		}
 	}
+
 	return nil
 }
 

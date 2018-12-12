@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-12-06 13:57:08
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-07 15:37:52
+* @Last Modified time: 2018-12-11 14:59:26
  */
 
 package FileSystemTab
@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"strings"
 
-	humanize "github.com/dustin/go-humanize"
+	readable "github.com/dustin/go-humanize"
 	"github.com/ximidar/Flotilla/Flotilla_File_Manager/Files"
 	"github.com/ximidar/gocui"
 )
@@ -28,6 +28,9 @@ type FileInfo struct {
 // NewFileInfo will create a FileInfo instance
 func NewFileInfo(y int, name string) *FileInfo {
 	fi := new(FileInfo)
+	fi.X = 0
+	fi.W = 10
+	fi.H = 2
 	fi.Y = y
 	fi.Name = name
 
@@ -66,7 +69,7 @@ func (fi *FileInfo) UpdateFileInfo(g *gocui.Gui, v *gocui.View) {
 	v.Clear()
 
 	fmt.Fprintln(v, fi.CurrentFile.Name)
-	fmt.Fprintln(v, humanize.Bytes(fi.CurrentFile.Size))
+	fmt.Fprintln(v, readable.Bytes(fi.CurrentFile.Size))
 	fmt.Fprintln(v, fi.CurrentFile.ModTime.Format("Mon Jan _2 2006"))
 
 	maxX, _ := v.Size()
