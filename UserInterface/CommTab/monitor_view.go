@@ -2,7 +2,7 @@
 * @Author: Ximidar
 * @Date:   2018-08-25 22:00:52
 * @Last Modified by:   Ximidar
-* @Last Modified time: 2018-12-11 18:51:05
+* @Last Modified time: 2018-12-12 16:19:01
  */
 
 package commtab
@@ -27,13 +27,14 @@ type MonitorInterface interface {
 // Monitor is an object that will display communication happening over
 // the serial line on flotilla
 type Monitor struct {
-	name string
-	x, y int
+	name       string
+	x, y       int
+	buffersize int
 }
 
 // NewMonitor will create a new monitor object
 func NewMonitor(name string, x, y int) MonitorInterface {
-	return &Monitor{name: name, x: x, y: y}
+	return &Monitor{name: name, x: x, y: y, buffersize: 0}
 }
 
 // Layout is used by gocui to organize the ui element on the screen
@@ -57,7 +58,7 @@ func (w *Monitor) Layout(g *gocui.Gui) error {
 
 // Write will write a string to the UI Element
 func (w *Monitor) Write(g *gocui.Gui, mess string) {
-
+	w.buffersize += len(mess)
 	g.Update(func(g *gocui.Gui) error {
 		v, err := g.View(w.name)
 		if err != nil {
@@ -67,7 +68,9 @@ func (w *Monitor) Write(g *gocui.Gui, mess string) {
 			// if the view is unkown dont write to it. TODO add unkown writes to buffer
 			return nil
 		}
+
 		fmt.Fprintln(v, StringCleaner(mess))
+		w.CheckBuffer(g, v)
 		return err
 
 	})
@@ -100,4 +103,12 @@ func (w *Monitor) Read(g *gocui.Gui) string {
 		return ""
 	}
 	return v.Buffer()
+}
+
+// CheckBuffer will check the current size of the buffer and cut it as necessary
+func (w *Monitor) CheckBuffer(g *gocui.Gui, v *gocui.View) {
+	if w.buffersize > 1000000 {
+		v.Clear()
+		w.buffersize = 0
+	}
 }
